@@ -55,5 +55,8 @@ Consider three components:
 ## Reference:
 - Wang, Congli, Ni Chen, and Wolfgang Heidrich. "do: A differentiable engine for deep lens design of computational imaging systems." IEEE Transactions on Computational Imaging 8 (2022): 905-916.
 - Ho, Chi-Jui, et al. "A Differentiable Wave Optics Model for End-to-End Computational Imaging System Optimization." arXiv preprint arXiv:2412.09774 (2024).
+## Code reference:
+https://github.com/vccimaging/DiffOptics
+
 
 
