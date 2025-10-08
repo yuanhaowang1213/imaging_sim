@@ -49,7 +49,7 @@ class Lensgroup(PrettyPrinter):
 
     # ---- setup / IO ----
     def load_file(self, filename: pathlib.Path) -> None:
-        self.surfaces, self.materials, self.r_last, d_last = self.read_lensfile(str(filename))
+        self.surfaces, self.materials, self.r_last, d_last, self.aperture_ind = self.read_lensfile(str(filename))
         # sensor plane z
         self.d_sensor = d_last + self.surfaces[-1].d
         self._sync()
@@ -61,13 +61,15 @@ class Lensgroup(PrettyPrinter):
     def _sync(self) -> None:
         for s in self.surfaces:
             s.to(self.device)
-        self.aperture_ind = self._find_aperture()
+    
+    # define the aperture_ind manually
+        # self.aperture_ind = self._find_aperture()
 
-    def _find_aperture(self) -> int | None:
-        for i in range(len(self.surfaces) - 1):
-            if self.materials[i].A < 1.0003 and self.materials[i + 1].A < 1.0003:
-                return i
-        return None
+    # def _find_aperture(self) -> int | None:
+    #     for i in range(len(self.surfaces) - 1):
+    #         if self.materials[i].A < 1.0003 and self.materials[i + 1].A < 1.0003:
+    #             return i
+    #     return None
 
     def _compute_transformation(self, _x: float = 0.0, _y: float = 0.0, _z: float = 0.0) -> Transformation:
         R = (
@@ -114,13 +116,14 @@ class Lensgroup(PrettyPrinter):
                         surfaces.append(Aspheric(r, d_total, roc, conic, ai))
                 elif surface_type == "A":  # aperture stop
                     surfaces.append(Aspheric(r, d_total, roc))
+                    aperture_ind = len(surfaces) -1
                 elif surface_type == "I":  # sensor plane record
                     d_total -= d
                     ds.pop()
                     materials.pop()
                     r_last = r
                     d_last = d
-        return surfaces, materials, r_last, d_last
+        return surfaces, materials, r_last, d_last,aperture_ind
 
     # ---- rendering ----
     def render(self, ray: "Ray", irr: float = 1.0) -> torch.Tensor:
@@ -313,118 +316,122 @@ class Lensgroup(PrettyPrinter):
         return valid, ray
     
     # plot function
-    def plot_layout2d(self, ax: plt.Axes | None = None, n_samples: int = 401,
-                    color: str = "k", with_sensor: bool = True, show: bool = True) -> plt.Axes:
-        """2D layout in z–x (y=0 slice)."""
+    def plot_layout2d(
+        self,
+        ax = None,
+        n_samples = 100,
+        color = "k",
+        with_sensor = True,
+        show= True,
+        fname =None
+    ) -> plt.Axes:
+        """2D layout in z–x (y=0). Draw surfaces, aperture wedges, lens edges, and sensor line."""
         created = False
         if ax is None:
-            fig, ax = plt.subplots(figsize=(8, 4)); created = True
+            fig, ax = plt.subplots(figsize=(8, 6))
+            created = True
 
-        for s in self.surfaces:
-            r = torch.linspace(-s.r, s.r, n_samples, device=self.device)
-            z = s.surface_with_offset(r, torch.zeros_like(r))
-            P = self.to_world.transform_point(torch.stack((r, torch.zeros_like(r), z), dim=-1))
-            P = P.detach().cpu().numpy()
-            ax.plot(P[:, 2], P[:, 0], color)
+        # helper: world transform then plot
+        def _plot_zx(z: torch.Tensor, x: torch.Tensor, c: str):
+            p = self.to_world.transform_point(
+                torch.stack(
+                    (x, torch.zeros_like(x, device=self.device), z), dim=-1
+                )
+            ).detach().cpu().numpy()
+            ax.plot(p[..., 2], p[..., 0], c)
 
+        # helper: draw aperture wedge at a surface
+        def _draw_aperture(surface, c: str):
+            N = 3
+            d = surface.d
+            R = surface.r
+            L = 0.05 * R      # wedge length [mm]
+            H = 0.15 * R      # wedge height [mm]
+
+            # two short horizontal ticks
+            z = torch.linspace(d - L, d + L, N, device=self.device)
+            _plot_zx(z, -R * torch.ones_like(z), c)
+            _plot_zx(z,  R * torch.ones_like(z), c)
+            # two short vertical ticks
+            z = d * torch.ones(N, device=self.device)
+            _plot_zx(z, torch.linspace( R,  R + H, N, device=self.device), c)
+            _plot_zx(z, torch.linspace(-R - H, -R, N, device=self.device), c)
+
+        # draw surfaces / aperture markers
+        if len(self.surfaces) == 1:
+            _draw_aperture(self.surfaces[0], color)
+        else:
+            # draw each surface curve (skip drawing full curve for the aperture, only wedges)
+            for i, s in enumerate(self.surfaces):
+                # Air–Air interface → mark as aperture
+                if i < len(self.materials) - 1:
+                    if self.materials[i].A < 1.0003 and self.materials[i + 1].A < 1.0003:
+                        _draw_aperture(s, color)
+                        continue
+                # regular surface curve
+                r = torch.linspace(-s.r, s.r, max(n_samples, getattr(s, "APERTURE_SAMPLING", n_samples)), device=self.device)
+                z = s.surface_with_offset(r, torch.zeros_like(r))
+                _plot_zx(z, r, color)
+
+            # draw lens outer edges (between air and glass radii)
+            prev_surface = None
+            for i, s in enumerate(self.surfaces):
+                if self.materials[i].A < 1.0003:  # AIR
+                    prev_surface = s
+                else:
+                    if prev_surface is None:
+                        prev_surface = s
+                    r_prev = prev_surface.r
+                    r_cur  = s.r
+                    sag_prev = prev_surface.surface_with_offset(torch.tensor(r_prev, device=self.device), torch.tensor(0.0, device=self.device))
+                    sag_cur  = s.surface_with_offset(torch.tensor(r_cur,  device=self.device), torch.tensor(0.0, device=self.device))
+                    z = torch.stack((sag_prev, sag_cur))
+                    x = torch.tensor([ r_prev,  r_cur], device=self.device)
+                    _plot_zx(z,  x, color)
+                    _plot_zx(z, -x, color)
+                    prev_surface = s
+
+        # draw sensor line
         if with_sensor and hasattr(self, "d_sensor"):
-            x_half = max(self.film_size) * self.pixel_size / 2.0
-            z = float(self.d_sensor)
-            ax.plot([z, z], [-x_half, x_half], "r--", lw=1.0, label="sensor")
+            x_half = max(self.film_size) * self.pixel_size / 2.0  # [mm]
+            z_s = float(self.d_sensor)
+            ax.plot([z_s, z_s], [-x_half, x_half], "r--", lw=1.0, label="sensor")
             ax.legend(loc="best")
 
         ax.set_aspect("equal", adjustable="box")
-        ax.set_xlabel("z [mm]"); ax.set_ylabel("x [mm]")
-        ax.set_title("Lens layout (2D)")
-        if show and created: plt.show()
-        elif created: plt.close()
+        ax.set_xlabel("z [mm]")
+        ax.set_ylabel("x [mm]")
+        ax.set_title("Layout 2D")
+
+        if created:
+            if show: 
+                plt.show()
+            else: 
+                if fname is not None:
+                    from pathlib import Path
+                    Path(fname).parent.mkdir(parents=True, exist_ok=True)
+                    ax.figure.savefig(fname, dpi=300, bbox_inches="tight")
+            plt.close(ax.figure)
         return ax
-    def plot_setup2D(self, ax=None, fig=None, show=True, color='k', with_sensor=True):
-        """
-        Plot elements in 2D.
-        """
-        if ax is None and fig is None:
-            fig, ax = plt.subplots(figsize=(8,6))
-        else:
-            show=False
 
-        # to world coordinate
-        def plot(ax, z, x, color):
-            p = self.to_world.transform_point(
-                torch.stack(
-                    (x, torch.zeros_like(x, device=self.device), z), axis=-1
-                )
-            ).cpu().detach().numpy()
-            ax.plot(p[...,2], p[...,0], color)
-
-        def draw_aperture(ax, surface, color):
-            N = 3
-            d = surface.d.cpu()
-            R = surface.r
-            APERTURE_WEDGE_LENGTH = 0.05 * R # [mm]
-            APERTURE_WEDGE_HEIGHT = 0.15 * R # [mm]
-
-            # wedge length
-            z = torch.linspace(d - APERTURE_WEDGE_LENGTH, d + APERTURE_WEDGE_LENGTH, N, device=self.device)
-            x = -R * torch.ones(N, device=self.device)
-            plot(ax, z, x, color)
-            x = R * torch.ones(N, device=self.device)
-            plot(ax, z, x, color)
-            
-            # wedge height
-            z = d * torch.ones(N, device=self.device)
-            x = torch.linspace(R, R+APERTURE_WEDGE_HEIGHT, N, device=self.device)
-            plot(ax, z, x, color)
-            x = torch.linspace(-R-APERTURE_WEDGE_HEIGHT, -R, N, device=self.device)
-            plot(ax, z, x, color)
-
-        if len(self.surfaces) == 1: # if there is only one surface, then it has to be the aperture
-            draw_aperture(ax, self.surfaces[0], color)
-        else:
-            # draw sensor plane
-            if with_sensor:
-                try:
-                    self.surfaces.append(Aspheric(self.r_last, self.d_sensor, 0.0))
-                except AttributeError:
-                    with_sensor = False
-
-            # draw surface
-            for i, s in enumerate(self.surfaces):
-                # find aperture
-                if i < len(self.surfaces)-1:
-                    if self.materials[i].A < 1.0003 and self.materials[i+1].A < 1.0003: # both are AIR
-                        draw_aperture(ax, s, color)
-                        continue
-                r = torch.linspace(-s.r, s.r, s.APERTURE_SAMPLING, device=self.device) # aperture sampling
-                z = s.surface_with_offset(r, torch.zeros(len(r), device=self.device))
-                plot(ax, z, r, color)
-            
-            # draw boundary
-            s_prev = []
-            for i, s in enumerate(self.surfaces):
-                if self.materials[i].A < 1.0003: # AIR
-                    s_prev = s
-                else:
-                    r_prev = s_prev.r
-                    r = s.r
-                    sag_prev = s_prev.surface_with_offset(r_prev, 0.0)
-                    sag      = s.surface_with_offset(r, 0.0)
-                    z = torch.stack((sag_prev, sag))
-                    x = torch.Tensor(np.array([r_prev, r])).to(self.device)
-                    plot(ax, z, x, color)
-                    plot(ax, z,-x, color)
-                    s_prev = s
-            
-            # remove sensor plane
-            if with_sensor:
-                self.surfaces.pop()
-
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.xlabel('z [mm]')
-        plt.ylabel('r [mm]')
-        plt.title("Layout 2D")
-        if show: plt.show()
-        return ax, fig
+    def plot_raytraces_world(self, oss, ax=None, color='C0', show=True, fname=None):
+        if ax is None:
+            ax = self.plot_layout2d(show=False)
+        for path in oss:
+            if len(path) < 2: 
+                continue
+            p = np.asarray(path)              # already world coords
+            ax.plot(p[:, 2], p[:, 0], color, lw=0.8, alpha=0.8)
+        if show: 
+            plt.show()
+        else: 
+            if fname is not None:
+                from pathlib import Path
+                Path(fname).parent.mkdir(parents=True, exist_ok=True)
+                ax.figure.savefig(fname, dpi=300, bbox_inches="tight")
+        plt.close(ax.figure)
+        return ax
+ 
 class Surface(PrettyPrinter):
     """Base implicit surface: f(x,y,z)=g(x,y)+h(z)=0 with circular/square aperture."""
     def __init__(self, r: float, d: float | torch.Tensor, is_square: bool = False, device: torch.device = torch.device("cpu")) -> None:
@@ -594,7 +601,7 @@ class Aspheric(Surface):
                 hs = r2 * hs + self.ai[i]
             higher_surface = hs * (r2 ** 2)
         if not isinstance(higher_surface, torch.Tensor):
-            higher_surface = torch.as_tensor(higher_surface, device=r2.device, dtype=r2.dtype)
+            higher_surface = torch.as_tensor(higher_surface, device=self.c.device, dtype=self.c.dtype)
         return total_surface + higher_surface
 
     def _dgd(self, r2: torch.Tensor) -> torch.Tensor:

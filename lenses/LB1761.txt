@@ -3,5 +3,5 @@ type distance roc diameter material
 O       0.0        0.0       0.0      AIR 
 S       0.0       24.5      25.4      bk7
 S       9.000    -24.5      25.4      AIR
-A	0.0       0.0     12.5	OCCLUDER
+A	2.0       0.0     3.175	OCCLUDER
 I      22.200      0.0      25.4    AIR
