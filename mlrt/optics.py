@@ -4,8 +4,9 @@ import math
 import numpy as np
 import torch
 import pathlib
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 
 from .basics import PrettyPrinter, Transformation, Ray, rodrigues_rotation_matrix
 from .materials import Material
@@ -31,25 +32,32 @@ class Lensgroup(PrettyPrinter):
         lambdas: List[float] | None = None,
         film_size: List[int] | None = None,
         theta: torch.Tensor | None = None,
+        dispersion : bool = False,
         device: torch.device = torch.device("cpu"),
+        
     ) -> None:
         self.origin = (origin if origin is not None else torch.zeros(3)).to(device)
         self.shift = (shift if shift is not None else torch.zeros(3)).to(device)
         self.theta = (theta if theta is not None else torch.zeros(3)).to(device)
         self.device = device
 
+        # lens group
         self.surfaces: List[Surface] = []
         self.materials: List[Material] = []
 
+        self.dispersion = dispersion
+
+        # sensor
         self.pixel_size = float(pixel_size)  # mm
         self.film_size = list(film_size) if film_size is not None else [512, 512]
 
+        # transformation
         self.to_world = self._compute_transformation()
         self.to_object = self.to_world.inverse()
 
     # ---- setup / IO ----
     def load_file(self, filename: pathlib.Path) -> None:
-        self.surfaces, self.materials, self.r_last, d_last, self.aperture_ind = self.read_lensfile(str(filename))
+        self.surfaces, self.materials, self.r_last, d_last, self.aperture_ind = self.read_lensfile(str(filename), self.dispersion)
         # sensor plane z
         self.d_sensor = d_last + self.surfaces[-1].d
         self._sync()
@@ -81,7 +89,7 @@ class Lensgroup(PrettyPrinter):
         return Transformation(R, t)
 
     @staticmethod
-    def read_lensfile(filename: str) -> Tuple[List["Surface"], List["Material"], float, float]:
+    def read_lensfile(filename: str, dispersion: bool) -> Tuple[List["Surface"], List["Material"], float, float]:
         surfaces: List[Surface] = []
         materials: List[Material] = []
         ds: List[float] = []
@@ -99,7 +107,7 @@ class Lensgroup(PrettyPrinter):
                 roc = float(ls[2])
                 if roc != 0:
                     roc = 1.0 / roc
-                materials.append(Material(ls[4]))
+                materials.append(Material(name=ls[4], dispersion=dispersion))
 
                 d_total += d
                 ds.append(d)
@@ -318,12 +326,12 @@ class Lensgroup(PrettyPrinter):
     # plot function
     def plot_layout2d(
         self,
-        ax = None,
-        n_samples = 100,
-        color = "k",
-        with_sensor = True,
-        show= True,
-        fname =None
+        ax : Optional[Axes] = None,
+        n_samples: int = 100,
+        color : str= "k",
+        with_sensor:bool = True,
+        show: bool= True,
+        fname: str =None
     ) -> plt.Axes:
         """2D layout in z–x (y=0). Draw surfaces, aperture wedges, lens edges, and sensor line."""
         created = False
@@ -414,7 +422,12 @@ class Lensgroup(PrettyPrinter):
             plt.close(ax.figure)
         return ax
 
-    def plot_raytraces_world(self, oss, ax=None, color='C0', show=True, fname=None):
+    def plot_raytraces_world( self,
+                            oss: list[list[np.ndarray]],
+                            ax: Optional[Axes] = None,
+                            color: str = "C0",
+                            show: bool = True,
+                            fname: str = None):
         if ax is None:
             ax = self.plot_layout2d(show=False)
         for path in oss:
