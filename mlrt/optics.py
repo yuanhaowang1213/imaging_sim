@@ -337,7 +337,7 @@ class Lensgroup(PrettyPrinter):
         if D2_guess is None:
             D2_guess = self.d_sensor - z2
 
-        import numpy as np, torch
+        import numpy as np
         grid = np.linspace(D2_guess - span, D2_guess + span, steps)
         best = (float("inf"), grid[0])
 
@@ -369,7 +369,8 @@ class Lensgroup(PrettyPrinter):
             if metric < best[0]:
                 best = (metric, D2)
 
-        return best[1]
+        return best[1] 
+    
     # psf metrics 
     def psf_metrics(self, I:torch.Tensor) -> dict:
         """

@@ -23,9 +23,10 @@ def build_lens(
     """
     Geometry:
       S1: AIR -> BK7 at z=0
-      S2: BK7 -> AIR at z=T
+      S2: BK7 -> AIR at z=T, radius LD
       A : optional AIR–AIR stop at z = T + stop_after_s2_mm, radius = OD/2
-      Sensor plane z = T + D2 (used only for intersection)
+      Sensor plane:
+      z = T + stop_after_s2_mm + D2 (used only for intersection)
     """
     lens = Lensgroup(device=device, pixel_size=pixel_size_mm, film_size=film_M)
 
@@ -49,7 +50,7 @@ def build_lens(
 
     lens.surfaces = surfaces
     lens.materials = materials
-    lens.d_sensor = float(T) + float(D2)
+    lens.d_sensor = float(T) + float(stop_after_s2_mm) + float(D2)
     lens.aperture_ind = aperture_ind
     lens._sync()
     return lens
@@ -75,8 +76,8 @@ def run_first(args) -> None:
     lens.plot_raytraces_world(oss=oss, ax=ax, show=False, fname = out_dir / f"{args.prefix}_rays.png")
     I = lens.render(ray, irr=1.0)
     lens.plot_psf(I, show=False, fname=out_dir / f"{args.prefix}_psf.png")
-    dis = lens.best_focus_D2( D_mm = args.D, lam=500.0, N=5000, D2_guess=None, span=5.0, steps=21, use_spot=False)
-        
+    dis = lens.best_focus_D2( D_mm = args.D, lam=500.0, N=5000, D2_guess=None, span=5.0, steps=21, use_spot=True) - args.stop_after_s2_mm
+
     
 # --------------------------
 # Argument parsing
@@ -91,7 +92,7 @@ def parse_args():
     p.add_argument("--R2", type=float, default=-24.5,help="Back radius R2 [mm] (convex to sensor often negative)")
     p.add_argument("--LD", type=float, default=25.4, help="Diameter of the lens [mm]")
     p.add_argument("--OD", type=float, default=3.175, help="Aperture diameter OD [mm]")
-    p.add_argument("--D2", type=float, default=23.8, help="S2 to sensor distance [mm]")
+    p.add_argument("--D2", type=float, default=21.3, help="Aperture to sensor distance [mm]")
 
     # Stop
     p.add_argument("--stop_after_s2_mm", type=float, default=2.0, help="Stop position after S2 [mm]")
