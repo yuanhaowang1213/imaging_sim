@@ -1,4 +1,5 @@
 # optics.py — Lensgroup + Aspheric surface + tracing, sampling, and PSF rendering
+# modified from https://github.com/vccimaging/DiffOptics/tree/main/diffoptics MIT License
 from __future__ import annotations
 import math
 import numpy as np
@@ -323,6 +324,95 @@ class Lensgroup(PrettyPrinter):
             return valid, ray, oss
         return valid, ray
     
+    def best_focus_D2(self, D_mm, lam=500.0, N=5000,
+                  D2_guess=None, span=5.0, steps=21, use_spot=True):
+        """
+        Return D2 (distance from surface 2 to sensor) that minimizes blur.
+        - D2_guess: use thick-lens BFD as initial guess; if None, use infinity BFL.
+        - span: +/- range (mm) around the guess to search.
+        """
+        # if you have R1,R2,T,n, you can compute BFD as in the formulas above
+        # here assume caller passes a D2_guess; otherwise use current lens.d_sensor - z2
+        z2 = float(self.surfaces[1].d)
+        if D2_guess is None:
+            D2_guess = self.d_sensor - z2
+
+        import numpy as np, torch
+        grid = np.linspace(D2_guess - span, D2_guess + span, steps)
+        best = (float("inf"), grid[0])
+
+        for D2 in grid:
+            self.d_sensor = z2 + D2
+            rays = self.sample_ray_from_point(D_mm=D_mm, wavelength=lam, N=N, filter_to_stop=True)
+            if use_spot:
+                p = self.trace_to_sensor(rays, ignore_invalid=True).cpu().numpy()
+                if p.size == 0: continue
+                xy = p[:, :2]
+                c = xy.mean(axis=0, keepdims=True)
+                r = np.linalg.norm(xy - c, axis=1)
+                metric = r.mean()  # or np.sqrt((r**2).mean())  (RMS)
+            else:
+                I = self.render(rays)
+                # quick EE50 radius in pixels then convert to mm by pixel_size
+                img = I.detach().cpu().float().numpy()
+                if img.max() <= 0: continue
+                # center = argmax
+                peak = np.unravel_index(np.argmax(img), img.shape)
+                yy, xx = np.indices(img.shape)
+                dx = (xx - peak[0]) * self.pixel_size
+                dy = (yy - peak[1]) * self.pixel_size
+                r = np.sqrt(dx*dx + dy*dy).ravel()
+                w = img.ravel() / img.sum()
+                order = np.argsort(r)
+                cdf = np.cumsum(w[order])
+                metric = r[order][np.searchsorted(cdf, 0.5)]  # EE50 radius
+            if metric < best[0]:
+                best = (metric, D2)
+
+        return best[1]
+    # psf metrics 
+    def psf_metrics(self, I:torch.Tensor) -> dict:
+        """
+        Compute simple metrics: sum, centorid offset, RMS radius, EE50.
+        All in mm.
+        """
+        img = I.detach().cpu().float().numpy()
+        H, W = img.shape
+        if img.sum() <= 0:
+            return dict(sum=0.0, cx_mm=0.0, cy_mm=0.0, r_centroid_mm=np.nan,
+                    rms_radius_mm=np.nan, ee50_mm=np.nan)
+        # coordinates in mm with center at sensor center
+        xs = (np.arange(W) - W/2 + 0.5) * self.pixel_size
+        ys = (np.arange(H) - H/2 + 0.5) * self.pixel_size
+        X, Y = np.meshgrid(xs,ys,indexing="xy")
+        S = img.sum()
+        cx = (img * X.T).sum() / S
+        cy = (img * Y.T).sum() / S
+        r = np.sqrt((X.T - cx)**2 + (Y.T - cy)**2)
+
+        # RMS radius (energy-weighted)
+        rms = np.sqrt((img * r**2).sum() / S)
+
+        # Encircled energy (centered at centroid)
+        r_flat = r.flatten()
+        w_flat = img.flatten()
+        order = np.argsort(r_flat)
+        r_sorted = r_flat[order]
+        w_sorted = w_flat[order]
+        cumsum = np.cumsum(w_sorted)
+        ee = cumsum / cumsum[-1]
+        # EE50 radius
+        idx = np.searchsorted(ee, 0.5)
+        ee50 = r_sorted[min(idx, len(r_sorted)-1)]
+
+        return dict(
+            sum=float(S),
+            cx_mm=float(cx), cy_mm=float(cy),
+            r_centroid_mm=float(np.hypot(cx, cy)),
+            rms_radius_mm=float(rms),
+            ee50_mm=float(ee50),
+        )
+
     # plot function
     def plot_layout2d(
         self,
@@ -444,6 +534,32 @@ class Lensgroup(PrettyPrinter):
                 ax.figure.savefig(fname, dpi=300, bbox_inches="tight")
         plt.close(ax.figure)
         return ax
+    def plot_psf(self, I: torch.Tensor, fname: str =None,show: bool = True,
+             normalize: bool = True, cmap: str = "inferno") -> None:
+        img = I.detach().cpu().float()
+        if normalize and img.numel() > 0 and img.max() > 0:
+            img = img / img.max()
+
+        H, W = self.film_size
+        x_half = W * self.pixel_size / 2.0
+        y_half = H * self.pixel_size / 2.0
+        extent = [-x_half, x_half, -y_half, y_half]
+
+        fig, ax = plt.subplots(figsize=(5, 5))
+        ax.imshow(img.T.numpy(), extent=extent, origin="lower", cmap=cmap)
+        ax.set_xlabel("x [mm]")
+        ax.set_ylabel("y [mm]")
+        ax.set_title("PSF at sensor")
+        cbar = fig.colorbar(ax.images[0], ax=ax)
+        cbar.set_label("normalized intensity")
+        if show: 
+            plt.show()
+        else:
+            if fname is not None:
+                    from pathlib import Path
+                    Path(fname).parent.mkdir(parents=True, exist_ok=True)
+                    fig.savefig(fname, dpi=300, bbox_inches="tight")
+        plt.close(fig)
  
 class Surface(PrettyPrinter):
     """Base implicit surface: f(x,y,z)=g(x,y)+h(z)=0 with circular/square aperture."""

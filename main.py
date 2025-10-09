@@ -16,7 +16,7 @@ from mlrt.basics import Ray
 
 
 def build_lens(
-    R1: float, T: float, R2: float, OD: float, D2: float,
+    R1: float, T: float, R2: float, LD: float, OD: float, D2: float,
     pixel_size_mm: float, film_M: list[int], device: torch.device,
     stop_after_s2_mm: float = 0.0, add_explicit_stop: bool = True,
 ) -> Lensgroup:
@@ -29,7 +29,7 @@ def build_lens(
     """
     lens = Lensgroup(device=device, pixel_size=pixel_size_mm, film_size=film_M)
 
-    r_lens = float(OD) * 0.5
+    r_lens = float(LD) * 0.5
     c1 = 0.0 if R1 == 0 else 1.0 / float(R1)
     c2 = 0.0 if R2 == 0 else 1.0 / float(R2)
 
@@ -38,10 +38,11 @@ def build_lens(
     surfaces = [s1, s2]
     materials = [Material("AIR"), Material("bk7"), Material("AIR")]
 
+    
     aperture_ind = None
     if add_explicit_stop:
         zA = float(T) + float(stop_after_s2_mm)
-        a = Aspheric(r=r_lens, d=zA, c=0.0, device=device)     # AIR–AIR stop
+        a = Aspheric(r=OD*0.5, d=zA, c=0.0, device=device)     # AIR–AIR stop
         surfaces.append(a)
         materials.append(Material("AIR"))
         aperture_ind = len(surfaces) - 1
@@ -59,7 +60,7 @@ def run_first(args) -> None:
     assert 1e-4 <= pixel_size_mm <= 0.05, "pixel_size should be in mm (e.g. 0.006 for 6 µm)"
 
     lens = build_lens(
-        R1=args.R1, T=args.T, R2=args.R2, OD=args.OD, D2=args.D2,
+        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2,
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
@@ -69,6 +70,13 @@ def run_first(args) -> None:
     out_dir = Path(args.out_dir); out_dir.mkdir(parents=True, exist_ok=True)
     # layout
     ax = lens.plot_layout2d(show=False, fname=out_dir / f"{args.prefix}_layout.png")
+    
+    _, oss = lens.trace_to_sensor_r(ray, ignore_invalid=False)
+    lens.plot_raytraces_world(oss=oss, ax=ax, show=False, fname = out_dir / f"{args.prefix}_rays.png")
+    I = lens.render(ray, irr=1.0)
+    lens.plot_psf(I, show=False, fname=out_dir / f"{args.prefix}_psf.png")
+    dis = lens.best_focus_D2( D_mm = args.D, lam=500.0, N=5000, D2_guess=None, span=5.0, steps=21, use_spot=False)
+        
     
 # --------------------------
 # Argument parsing
@@ -81,8 +89,9 @@ def parse_args():
     p.add_argument("--R1", type=float, default=24.5, help="Front radius R1 [mm] (convex>0)")
     p.add_argument("--T",  type=float, default=9.0,  help="Center thickness T [mm]")
     p.add_argument("--R2", type=float, default=-24.5,help="Back radius R2 [mm] (convex to sensor often negative)")
+    p.add_argument("--LD", type=float, default=25.4, help="Diameter of the lens [mm]")
     p.add_argument("--OD", type=float, default=3.175, help="Aperture diameter OD [mm]")
-    p.add_argument("--D2", type=float, default=22.2, help="S2 to sensor distance [mm]")
+    p.add_argument("--D2", type=float, default=23.8, help="S2 to sensor distance [mm]")
 
     # Stop
     p.add_argument("--stop_after_s2_mm", type=float, default=2.0, help="Stop position after S2 [mm]")
