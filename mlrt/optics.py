@@ -536,7 +536,7 @@ class Lensgroup(PrettyPrinter):
         plt.close(ax.figure)
         return ax
     def plot_psf(self, I: torch.Tensor, fname: str =None,show: bool = True,
-             normalize: bool = True, cmap: str = "inferno") -> None:
+             normalize: bool = True, cmap: str = "gray", log:bool=False) -> None:
         img = I.detach().cpu().float()
         if normalize and img.numel() > 0 and img.max() > 0:
             img = img / img.max()
@@ -547,7 +547,13 @@ class Lensgroup(PrettyPrinter):
         extent = [-x_half, x_half, -y_half, y_half]
 
         fig, ax = plt.subplots(figsize=(5, 5))
-        ax.imshow(img.T.numpy(), extent=extent, origin="lower", cmap=cmap)
+        if log:
+            from matplotlib.colors import LogNorm
+            eps = max(1e-6, img.max()*1e-6)
+            ax.imshow(img.T.numpy(), extent=extent, origin="lower", cmap=cmap, norm=LogNorm(vmin=eps, vmax=img.max() if img.max()>0 else 1))
+        else:
+            ax.imshow(img.T.numpy(), extent=extent, origin="lower", cmap=cmap)
+
         ax.set_xlabel("x [mm]")
         ax.set_ylabel("y [mm]")
         ax.set_title("PSF at sensor")

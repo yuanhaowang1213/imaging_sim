@@ -75,7 +75,7 @@ def run_first(args) -> None:
     _, oss = lens.trace_to_sensor_r(ray, ignore_invalid=False)
     lens.plot_raytraces_world(oss=oss, ax=ax, show=False, fname = out_dir / f"{args.prefix}_rays.png")
     I = lens.render(ray, irr=1.0)
-    lens.plot_psf(I, show=False, fname=out_dir / f"{args.prefix}_psf.png")
+    lens.plot_psf(I, show=False, log=False, fname=out_dir / f"{args.prefix}_psf.png")
     dis = lens.best_focus_D2( D_mm = args.D, lam=500.0, N=5000, D2_guess=None, span=5.0, steps=21, use_spot=True) - args.stop_after_s2_mm
 
     
