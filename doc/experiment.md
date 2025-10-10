@@ -34,25 +34,31 @@ After optimization, we found that placing the sensor at **20.5 mm** after the ap
 ![](../out/biconvex_psf_log.png)
 
 ## N-sweep (sampling/)
-We sweeped N for {50, 100, 400,1600,3200,6400}, and calculated the **Metrics vs N**. 
-To further examine the focus sensitivity, we offset the sensor plane 2 mm away from the best-focus position (previously found at 20.5 mm) and repeated the PSF analysis. This deliberate defocus allows us to study how the spot size and energy distribution degrade when the image plane is displaced, providing a better understanding of depth-of-focus and system tolerance.
+We sweeped N for **[50, 100, 400,1600,3200,6400]**, and calculated the **Metrics vs N**. 
+To further examine the focus sensitivity, we use a lareger aperture **OD = 6.35** and repeated the PSF analysis. This deliberate defocus allows us to study how the spot size and energy distribution degrade when the image plane is displaced, providing a better understanding of depth-of-focus and system tolerance.
+
+We illustrate the **N = 50, 400, 3200**, respectively and more to be found in the [folder](../out/sweep_N)
+| N = 50 | N = 400 | N = 3200 |
+|:-------:|:--------:|:---------:|
+| ![PSF 50](../out/sweep_N/biconvex_psf_50_log.png) | ![PSF 400](../out/sweep_N/biconvex_psf_400_log.png) | ![PSF 400](../out/sweep_N/biconvex_psf_3200_log.png)  |
 
 
-
+Metrics EE50 and rms are:
 |    N | ee50_mm | rms_radius_mm |
 | ---: | :-----: | :-----------: |
-|   50 | 0.05801 |    0.07419    |
-|  100 | 0.05957 |    0.07320    |
-|  400 | 0.06029 |    0.07220    |
-| 1600 | 0.05956 |    0.07168    |
-| 3200 | 0.05996 |    0.07153    |
-| 6400 | 0.06000 |    0.07142    |
+|   50 | 0.00591 |    0.02611    |
+|  100 | 0.00551 |    0.02455    |
+|  400 | 0.00491 |    0.02282    |
+| 1600 | 0.00465 |    0.02200    |
+| 3200 | 0.00457 |    0.02177    |
+| 6400 | 0.00453 |    0.02160    |
 
-The convergence begins around N ≥ 1600, where the RMS and EE50 values stabilize to ~0.060 mm and ~0.071 mm, respectively — indicating sufficient ray sampling density for accurate PSF estimation. To get better simulation, we choose N=3200 for the rest of experiments.
+
+The convergence begins around N ≥ 1600, where the RMS and EE50 values stabilize to ~0.045 mm and ~0.021 mm, respectively — indicating sufficient ray sampling density for accurate PSF estimation. To get better simulation, we choose N=3200 for the rest of experiments.
 
 ### Wavelength Sweep
 
-We sweep wavelength for 
+We sweep wavelength for **[430, 460, 490, 520, 550, 580, 610, 640, 670]**, a range of 
 
 
 ### Through-focus (D2 sweep)
