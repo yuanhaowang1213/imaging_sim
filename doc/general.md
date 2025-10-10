@@ -61,16 +61,6 @@ Parameter table:
 ---
 
 
-
-
-## Code design:
-- **Core class**: `Lensgroup` (surfaces, materials, transform, tracing).
-- **Key functions**:
-  - `sample_ray_from_point`, `sample_offaxis_point_axis`
-  - `render` (PSF), `best_focus_D2` (spot-size/EE50 search)
-  - `psf_metrics` (sum, centroid, RMS radius, EE50)
-- **Plot helpers**: layout / rays / PSF (linear & log scale).
-- **Experiments in `main.py`**: `single`, `sweep_N`, `sweep_lambda`, `offaxis`, `sweep_D2` (through focus), `sweep_OD` (aperture sweep, optional refocus).
 ## Reference:
 - Wang, Congli, Ni Chen, and Wolfgang Heidrich. "do: A differentiable engine for deep lens design of computational imaging systems." IEEE Transactions on Computational Imaging 8 (2022): 905-916.
 - Ho, Chi-Jui, et al. "A Differentiable Wave Optics Model for End-to-End Computational Imaging System Optimization." arXiv preprint arXiv:2412.09774 (2024).
