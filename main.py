@@ -97,7 +97,7 @@ def run_sweep_N(args) ->None:
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
     pixel_size_mm = float(args.h) / float(args.M[1])
     lens = build_lens(
-        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2+2, # off focus to see the change of sampling effect
+        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD*2, D2=args.D2, # use larger aperture to see the change of sampling effect
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
