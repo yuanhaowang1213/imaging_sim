@@ -149,10 +149,12 @@ class Lensgroup(PrettyPrinter):
         p = p[valid]
         if p.numel() == 0:
             return torch.zeros(*self.film_size, device=self.device)
-
-        u = (p[..., 0] + R_sensor[0]) / self.pixel_size
-        v = (p[..., 1] + R_sensor[1]) / self.pixel_size
-
+        u = (p[..., 0] + R_sensor[0]) / self.pixel_size 
+        v = (p[..., 1] + R_sensor[1]) / self.pixel_size 
+        if(self.film_size[0]%2 == 0):
+            u -= 0.5
+        if(self.film_size[1]%2 == 0):
+            v -= 0.5
         i0 = torch.clamp(torch.floor(u).long(), 0, self.film_size[0] - 1)
         j0 = torch.clamp(torch.floor(v).long(), 0, self.film_size[1] - 1)
         i1 = torch.clamp(i0 + 1, 0, self.film_size[0] - 1)
@@ -223,6 +225,7 @@ class Lensgroup(PrettyPrinter):
             ray.d = ray.d[valid]
             ray.wavelength = ray.wavelength[valid]
         return ray
+    # off axis sampling
     def sample_offaxis_point_axis(
         self,
         D_mm: float,
@@ -286,6 +289,7 @@ class Lensgroup(PrettyPrinter):
             ray.wavelength = ray.wavelength[valid]
 
         return ray
+
     def trace_to_sensor(self, ray: "Ray", ignore_invalid: bool = False) -> torch.Tensor:
         ray_final, valid = self.trace(ray)
         t = (self.d_sensor - ray_final.o[..., 2]) / (ray_final.d[..., 2].clamp_min(1e-12))
@@ -399,7 +403,6 @@ class Lensgroup(PrettyPrinter):
         if D2_guess is None:
             D2_guess = self.d_sensor - z2
 
-        import numpy as np
         grid = np.linspace(D2_guess - span, D2_guess + span, steps)
         best = (float("inf"), grid[0])
 
@@ -441,39 +444,39 @@ class Lensgroup(PrettyPrinter):
         """
         img = I.detach().cpu().float().numpy()
         H, W = img.shape
-        if img.sum() <= 0:
-            return dict(sum=0.0, cx_mm=0.0, cy_mm=0.0, r_centroid_mm=np.nan,
-                    rms_radius_mm=np.nan, ee50_mm=np.nan)
-        # coordinates in mm with center at sensor center
-        xs = (np.arange(W) - W/2 + 0.5) * self.pixel_size
-        ys = (np.arange(H) - H/2 + 0.5) * self.pixel_size
-        X, Y = np.meshgrid(xs,ys,indexing="xy")
         S = img.sum()
-        cx = (img * X.T).sum() / S
-        cy = (img * Y.T).sum() / S
-        r = np.sqrt((X.T - cx)**2 + (Y.T - cy)**2)
+        if S <= 0:
+            return dict(sum=0.0, cx_mm=0.0, cy_mm=0.0,
+                        r_centroid_mm=float("nan"),
+                        rms_radius_mm=float("nan"),
+                        ee50_mm=float("nan"))
 
-        # RMS radius (energy-weighted)
-        rms = np.sqrt((img * r**2).sum() / S)
+        # Axis convention: axis 0 = x (size H), axis 1 = y (size W)
+        xs = (np.arange(H) - H/2 + 0.5) * self.pixel_size  # mm, pixel centers
+        ys = (np.arange(W) - W/2 + 0.5) * self.pixel_size  # mm
+        X, Y = np.meshgrid(xs, ys, indexing="ij")          # shapes (H,W), (H,W)
 
-        # Encircled energy (centered at centroid)
-        r_flat = r.flatten()
-        w_flat = img.flatten()
-        order = np.argsort(r_flat)
-        r_sorted = r_flat[order]
-        w_sorted = w_flat[order]
-        cumsum = np.cumsum(w_sorted)
-        ee = cumsum / cumsum[-1]
-        # EE50 radius
-        idx = np.searchsorted(ee, 0.5)
-        ee50 = r_sorted[min(idx, len(r_sorted)-1)]
+        # Energy-weighted centroid (mm)
+        cx = float((img * X).sum() / S)
+        cy = float((img * Y).sum() / S)
+
+        # RMS radius about centroid (mm)
+        r2 = (X - cx)**2 + (Y - cy)**2
+        rms = float(np.sqrt((img * r2).sum() / S))
+
+        # Encircled-energy radius at 50% (EE50), centered at centroid
+        r = np.sqrt(r2).ravel()
+        w = img.ravel()
+        order = np.argsort(r)
+        cdf = np.cumsum(w[order]) / S
+        ee50 = float(r[order][np.searchsorted(cdf, 0.5)])
 
         return dict(
             sum=float(S),
-            cx_mm=float(cx), cy_mm=float(cy),
+            cx_mm=cx, cy_mm=cy,
             r_centroid_mm=float(np.hypot(cx, cy)),
-            rms_radius_mm=float(rms),
-            ee50_mm=float(ee50),
+            rms_radius_mm=rms,
+            ee50_mm=ee50,
         )
 
     # plot function

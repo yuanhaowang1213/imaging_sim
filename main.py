@@ -220,6 +220,80 @@ def run_sweep_D2(args) -> None:
     print(f"[sweep_D2] done: {out_dir.resolve()}")
 
 # --------------------------
+# Experiment 5 — Aperture OD sweep (with optional refocus)
+# --------------------------
+def run_sweep_OD(args) -> None:
+    OD_list = args.OD_list or [args.OD/2,args.OD,  args.OD*2, args.OD*4]
+    out_dir = Path(args.out_dir) / "sweep_OD"; out_dir.mkdir(parents=True, exist_ok=True)
+    device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
+    pixel_size_mm = float(args.h) / float(args.M[1])
+
+    rows = []
+    for OD in OD_list:
+        lens = build_lens(
+            R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=OD, D2=args.D2,
+            pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
+            stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
+            dispersion=args.dispersion,
+        )
+        if args.refocus_per_OD:
+            D2_best = lens.best_focus_D2(D_mm=args.D, lam=args.lambda_nm, N=max(2000, args.N),
+                                         D2_guess=args.D2, span=args.D2_span, steps=args.D2_steps,
+                                         use_spot=True)
+            z2 = float(lens.surfaces[1].d)
+            lens.d_sensor = z2 + float(args.stop_after_s2_mm) + float(D2_best)
+
+        rays = lens.sample_ray_from_point(D_mm=args.D, wavelength=args.lambda_nm, N=args.N, filter_to_stop=True)
+        I = lens.render(rays, irr=1.0)
+        if torch.max(I) > 0:
+            I_disp = I / (torch.max(I) + 1e-12); I_ene = I / (torch.sum(I) + 1e-12)
+            lens.plot_psf(I_disp, show=False, log=True, fname=out_dir / f"{args.prefix}_psf_OD_{OD:.3f}_log.png")
+            m = lens.psf_metrics(I_ene); m["OD"] = float(OD)
+            rows.append(m)
+
+    with open(out_dir / "metrics.csv", "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["OD","sum","cx_mm","cy_mm","r_centroid_mm","rms_radius_mm","ee50_mm"])
+        w.writeheader(); [w.writerow(r) for r in rows]
+    print(f"[sweep_OD] done: {out_dir.resolve()}")
+
+
+# --------------------------
+#  Experiment 6 — Field map (2D off-axis grid)
+# --------------------------
+def run_field_grid(args) -> None:
+    out_dir = Path(args.out_dir) / "field_grid"; out_dir.mkdir(parents=True, exist_ok=True)
+    device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
+    pixel_size_mm = float(args.h) / float(args.M[1])
+    lens = build_lens(
+        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2,
+        pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
+        stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
+        dispersion=args.dispersion,
+    )
+    xs = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps)
+    ys = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps)
+
+    rows = []
+    for x in xs:
+        for y in ys:
+            rays = lens.sample_offaxis_point( D_mm=args.D, wavelength=args.lambda_nm, N=args.N,
+                                        x_off_mm=float(x), y_off_mm=float(y), filter_to_stop=True)
+            I = lens.render(rays, irr=1.0)
+            if torch.max(I) > 0:
+                I_disp = I / (torch.max(I) + 1e-12); I_ene = I / (torch.sum(I) + 1e-12)
+                tag = f"{x:+.2f}_{y:+.2f}".replace('+','p').replace('-','m')
+                lens.plot_psf(I_disp, show=False, log=True, fname=out_dir / f"{args.prefix}_psf_{tag}_log.png")
+                m = lens.psf_metrics(I_ene); m["x_off_mm"] = float(x); m["y_off_mm"] = float(y)
+                rows.append(m)
+
+    with open(out_dir / "metrics.csv", "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["x_off_mm","y_off_mm","sum","cx_mm","cy_mm","r_centroid_mm","rms_radius_mm","ee50_mm"])
+        w.writeheader(); [w.writerow(r) for r in rows]
+    print(f"[field_grid] done: {out_dir.resolve()}")
+
+
+
+# --------------------------
 # Argument parsing
 # --------------------------
 def parse_args():
@@ -273,7 +347,7 @@ if __name__ == "__main__":
     args = parse_args()
     torch.manual_seed(0); np.random.seed(0)
 
-    run_first(args)
-    run_sweep_N(args)
-    run_sweep_lambda(args)
+    # run_first(args)
+    # run_sweep_N(args)
+    # run_sweep_lambda(args)
     run_offaxis(args)
