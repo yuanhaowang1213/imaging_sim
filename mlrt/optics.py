@@ -390,51 +390,97 @@ class Lensgroup(PrettyPrinter):
             return valid, ray, oss
         return valid, ray
     
-    def best_focus_D2(self, D_mm, lam=500.0, N=5000,
-                  D2_guess=None, span=5.0, steps=21, use_spot=True):
+    def best_focus_D2(
+        self,
+        D_mm,
+        lam: float = 500.0,
+        N: int = 5000,
+        D2_guess: float | None = None,
+        span: float = 5.0,
+        steps: int = 21,
+        use_spot: bool = True,
+        # new: fine pass params
+        span_fine: float = 0.3,
+        steps_fine: int = 25,
+    ) -> float:
         """
-        Return D2 (distance from surface 2 to sensor) that minimizes blur.
-        - D2_guess: use thick-lens BFD as initial guess; if None, use infinity BFL.
-        - span: +/- range (mm) around the guess to search.
+        Two-stage search for best D2 (surface-2 → sensor distance) that minimizes blur.
+
+        Stage 1 (coarse): sweep D2 in [D2_guess ± span] with `steps` samples.
+        Stage 2 (fine):   sweep D2 in [D2_coarse_best ± span_fine] with `steps_fine` samples.
+
+        If use_spot=True: metric = mean spot radius from ray hit points (no pixel grid).
+        If use_spot=False: render to pixels, metric = EE50 radius (mm).
         """
-        # if you have R1,R2,T,n, you can compute BFD as in the formulas above
-        # here assume caller passes a D2_guess; otherwise use current lens.d_sensor - z2
+        import numpy as np
+
+        # surface-2 z
         z2 = float(self.surfaces[1].d)
+
+        # default guess: current sensor offset
         if D2_guess is None:
             D2_guess = self.d_sensor - z2
 
-        grid = np.linspace(D2_guess - span, D2_guess + span, steps)
-        best = (float("inf"), grid[0])
+        # keep original sensor z and restore later
+        _orig_d_sensor = float(self.d_sensor)
 
-        for D2 in grid:
-            self.d_sensor = z2 + D2
+        def _metric_for(D2_val: float) -> float | None:
+            """Compute blur metric at a given D2. Return None if no rays hit sensor."""
+            self.d_sensor = z2 + float(D2_val)
             rays = self.sample_ray_from_point(D_mm=D_mm, wavelength=lam, N=N, filter_to_stop=True)
+
             if use_spot:
                 p = self.trace_to_sensor(rays, ignore_invalid=True).cpu().numpy()
-                if p.size == 0: continue
+                if p.size == 0:
+                    return None
                 xy = p[:, :2]
                 c = xy.mean(axis=0, keepdims=True)
                 r = np.linalg.norm(xy - c, axis=1)
-                metric = r.mean()  # or np.sqrt((r**2).mean())  (RMS)
+                return float(r.mean())  # or RMS: float(np.sqrt((r**2).mean()))
             else:
                 I = self.render(rays)
-                # quick EE50 radius in pixels then convert to mm by pixel_size
                 img = I.detach().cpu().float().numpy()
-                if img.max() <= 0: continue
-                # center = argmax
+                if img.max() <= 0:
+                    return None
+                # EE50 radius (center = brightest pixel)
                 peak = np.unravel_index(np.argmax(img), img.shape)
                 yy, xx = np.indices(img.shape)
                 dx = (xx - peak[0]) * self.pixel_size
                 dy = (yy - peak[1]) * self.pixel_size
-                r = np.sqrt(dx*dx + dy*dy).ravel()
-                w = img.ravel() / img.sum()
+                r = np.sqrt(dx * dx + dy * dy).ravel()
+                w = (img.ravel() / (img.sum() + 1e-12))
                 order = np.argsort(r)
                 cdf = np.cumsum(w[order])
-                metric = r[order][np.searchsorted(cdf, 0.5)]  # EE50 radius
-            if metric < best[0]:
-                best = (metric, D2)
+                idx = np.searchsorted(cdf, 0.5)
+                return float(r[order][min(idx, len(order) - 1)])
 
-        return best[1] 
+        # ---- Stage 1: coarse sweep ----
+        coarse_grid = np.linspace(D2_guess - span, D2_guess + span, steps)
+        best_val = float("inf")
+        best_D2 = float(coarse_grid[0])
+
+        for D2 in coarse_grid:
+            m = _metric_for(D2)
+            if m is None:
+                continue
+            if m < best_val:
+                best_val = m
+                best_D2 = float(D2)
+
+        # ---- Stage 2: fine sweep around coarse best ----
+        fine_grid = np.linspace(best_D2 - span_fine, best_D2 + span_fine, steps_fine)
+        best_val_f = float("inf")
+        best_D2_f = float(fine_grid[0])
+
+        for D2 in fine_grid:
+            m = _metric_for(D2)
+            if m is None:
+                continue
+            if m < best_val_f:
+                best_val_f = m
+                best_D2_f = float(D2)
+
+        return best_D2_f
     
     # psf metrics 
     def psf_metrics(self, I:torch.Tensor) -> dict:

@@ -80,7 +80,7 @@ def run_first(args) -> None:
     if torch.max(I) > 0:
         I = I / torch.max(I) 
     lens.plot_psf(I, show=False, log=True, fname=out_dir / f"{args.prefix}_psf_log.png")
-    dis = lens.best_focus_D2( D_mm = args.D, lam=500.0, N=5000, D2_guess=None, span=5.0, steps=21, use_spot=True) - args.stop_after_s2_mm
+    dis = lens.best_focus_D2( D_mm = args.D, lam=500.0, N=5000, D2_guess=None, span=args.D2_span, steps=21, use_spot=True) - args.stop_after_s2_mm
     print(f'the optimal distance between the sensor and the aperture {dis} mm')
     m = lens.psf_metrics( I)
     with open(out_dir / f"{args.prefix}_metrics.csv", "w", newline="") as f:
@@ -123,7 +123,7 @@ def run_sweep_N(args) ->None:
 # Experiment 2: wavelength sweep
 # --------------------------
 def run_sweep_lambda(args) -> None:
-    lambdas = args.lambda_list or [450.0, 550.0, 650.0]
+    lambdas = args.lambda_list or [430, 460, 490, 520, 550, 580, 610, 640, 670]
     out_dir = Path(args.out_dir) / "sweep_lambda"; out_dir.mkdir(parents=True, exist_ok=True)
 
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
@@ -155,7 +155,6 @@ def run_sweep_lambda(args) -> None:
 # Experiment 3: off-axis source
 # --------------------------
 def run_offaxis(args) -> None:
-    offsets = args.offaxis_list or [0.0, 1.0, 2.0]  # lateral shift in mm at the source plane
     out_dir = Path(args.out_dir) / "offaxis"; out_dir.mkdir(parents=True, exist_ok=True)
 
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
@@ -165,9 +164,10 @@ def run_offaxis(args) -> None:
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
+    xs = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps)
 
     rows = []
-    for dx in offsets:
+    for dx in xs:
         ray = lens.sample_offaxis_point_axis( D_mm=args.D, wavelength=args.lambda_nm, N=args.N,
                                    x_off_mm=float(dx), y_off_mm=0.0, filter_to_stop=True)
         I = lens.render(ray, irr=1.0)
@@ -198,7 +198,7 @@ def run_sweep_D2(args) -> None:
     # find best focus as center
     D2_best = lens.best_focus_D2(D_mm=args.D, lam=args.lambda_nm, N=max(2000, args.N),
                                  D2_guess=args.D2, span=args.D2_span, steps=args.D2_steps,
-                                 use_spot=True)
+                                 use_spot=True)- args.stop_after_s2_mm
     z2 = float(lens.surfaces[1].d)
     grid = np.linspace(D2_best - args.D2_sweep_span, D2_best + args.D2_sweep_span, args.D2_sweep_steps)
 
@@ -302,7 +302,7 @@ def parse_args():
     p.add_argument("--R2", type=float, default=-24.5,help="Back radius R2 [mm] (convex to sensor often negative)")
     p.add_argument("--LD", type=float, default=25.4, help="Diameter of the lens [mm]")
     p.add_argument("--OD", type=float, default=3.175, help="Aperture diameter OD [mm]")
-    p.add_argument("--D2", type=float, default=20.3, help="Aperture to sensor distance [mm]")
+    p.add_argument("--D2", type=float, default=20.5, help="Aperture to sensor distance [mm]")
 
     # Stop
     p.add_argument("--stop_after_s2_mm", type=float, default=2.0, help="Stop position after S2 [mm]")
@@ -311,7 +311,7 @@ def parse_args():
     # Source / sampling / sensor
     p.add_argument("--D",         type=float, default=1000.0, help="Object distance [mm]")
     p.add_argument("--lambda_nm", type=float, default=500.0,  help="Wavelength [nm]")
-    p.add_argument("--N",         type=int,   default=1600,   help="Rays (angle-uniform)")
+    p.add_argument("--N",         type=int,   default=3200,   help="Rays (angle-uniform)")
     p.add_argument("--M",         type=list,   default=[512,512],    help="Sensor MxM pixels")
     p.add_argument("--h",         type=float, default=3.2,    help="Sensor side length h [mm] (pixel_size=h/M)")
 
@@ -325,7 +325,7 @@ def parse_args():
     p.add_argument("--lambda_list", nargs="+", type=float, help="Override lambda sweep list")
     p.add_argument("--offaxis_list", nargs="+", type=float, help="Override off-axis x offsets [mm]")
 
-    p.add_argument("--D2_span", type=float, default=5.0, help="Best-focus search span [mm]")
+    p.add_argument("--D2_span", type=float, default=21.0, help="Best-focus search span [mm]")
     p.add_argument("--D2_steps", type=int, default=21, help="Best-focus search steps")
     p.add_argument("--D2_sweep_span", type=float, default=1.0, help="Through-focus sweep ±span around best [mm]")
     p.add_argument("--D2_sweep_steps", type=int, default=13, help="Through-focus sweep steps")
@@ -333,6 +333,7 @@ def parse_args():
     p.add_argument("--OD_list", nargs="+", type=float, help="OD sweep list [mm]")
     p.add_argument("--refocus_per_OD", action="store_true", help="Refocus (best D2) for each OD")
 
+    # offset
     p.add_argument("--field_max_mm", type=float, default=1.0, help="Off-axis grid half-width [mm] at source plane")
     p.add_argument("--field_steps", type=int, default=3, help="Off-axis grid steps per axis")
 
@@ -346,9 +347,9 @@ if __name__ == "__main__":
     args = parse_args()
     torch.manual_seed(0); np.random.seed(0)
 
-    # run_first(args)
-    # run_sweep_N(args)
-    # run_sweep_lambda(args)
+    run_first(args)
+    run_sweep_N(args)
+    run_sweep_lambda(args)
     run_offaxis(args)
     run_sweep_D2(args)
     run_sweep_OD(args)
