@@ -10,9 +10,9 @@ class Material:
 
     If dispersion=False (default), n(λ) is constant (A), i.e., B=0.
     If dispersion=True, uses a simple Cauchy-like form: n(λ) = A + B / λ²,
-    with (A, B) estimated from (n_D, V) at the D-line (589.3 nm) and Abbe number V.
+    with (A, B) estimated from (n_D, V) at the D-line (587.5618 nm) and Abbe number V.
     """
-    def __init__(self, name: str | None = None, dispersion: bool = False) -> None:
+    def __init__(self, name: str | None = None, dispersion: bool = True) -> None:
         self.name = "vacuum" if name is None else name.lower()
         self.dispersion = dispersion
         # minimal table; extend as needed
@@ -39,7 +39,7 @@ class Material:
     @staticmethod
     def nV_to_AB(n: float, V: float) -> Tuple[float, float]:
         def ivs(a: float) -> float: return 1.0 / (a * a)
-        C, D, F = 656.3, 589.3, 486.1  # C, D, F spectral lines
+        C, D, F = 656.2725, 587.5618, 486.1327  # C, D, F spectral lines
         if V == 0.0 or math.isinf(V):
             return n, 0.0
         B = (n - 1.0) / V / (ivs(F) - ivs(C))

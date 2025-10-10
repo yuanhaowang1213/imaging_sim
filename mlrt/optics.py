@@ -33,7 +33,7 @@ class Lensgroup(PrettyPrinter):
         lambdas: List[float] | None = None,
         film_size: List[int] | None = None,
         theta: torch.Tensor | None = None,
-        dispersion : bool = False,
+        dispersion : bool = True,
         device: torch.device = torch.device("cpu"),
         
     ) -> None:
@@ -223,7 +223,69 @@ class Lensgroup(PrettyPrinter):
             ray.d = ray.d[valid]
             ray.wavelength = ray.wavelength[valid]
         return ray
+    def sample_offaxis_point_axis(
+        self,
+        D_mm: float,
+        wavelength: float,
+        N: int,
+        x_off_mm: float,
+        y_off_mm: float,
+        filter_to_stop: bool = True,
+    ) -> "Ray":
+        """Off-axis point at (x_off,y_off,z_src). Cone axis = chief ray (toward stop center)."""
+        device = self.device
+        stop_i = getattr(self, "aperture_ind", None)
+        stop = self.surfaces[stop_i] if stop_i is not None else self.surfaces[0]
+        z_stop, r_stop = float(stop.d), float(stop.r)
 
+        # source position
+        z_front = float(self.surfaces[0].d)
+        z_src = z_front - float(D_mm)
+        o0 = torch.tensor([x_off_mm, y_off_mm, z_src], dtype=torch.float32, device=device)
+
+        # chief ray axis (toward stop center)
+        c = torch.tensor([0.0, 0.0, z_stop], dtype=torch.float32, device=device) - o0
+        dist = float(torch.linalg.norm(c))
+        axis = c / (dist + 1e-12)
+
+        # cone half-angle so that cone just touches stop rim
+        theta_max = math.atan2(r_stop, max(dist, 1e-9))
+
+        # angle-uniform grid on that cone
+        n_th = max(1, int(math.sqrt(max(1, N))))
+        n_ph = max(1, int(math.ceil(N / n_th)))
+        TH = torch.linspace(0.0, theta_max, steps=n_th, device=device)
+        PH = torch.linspace(0.0, 2 * math.pi, steps=n_ph + 1, device=device)[:-1]
+        TH, PH = torch.meshgrid(TH, PH, indexing="ij")
+
+        # local orthonormal basis (u, v, axis)
+        tmp = torch.tensor([1.0, 0.0, 0.0], dtype=torch.float32, device=device)
+        if torch.abs((tmp * axis).sum()) > 0.9:
+            tmp = torch.tensor([0.0, 1.0, 0.0], dtype=torch.float32, device=device)
+        u = torch.cross(axis, tmp); u = u / (torch.linalg.norm(u) + 1e-12)
+        v = torch.cross(axis, u)
+
+        # directions on the cone
+        dx = torch.sin(TH) * torch.cos(PH)
+        dy = torch.sin(TH) * torch.sin(PH)
+        dz = torch.cos(TH)
+        d = (u[None, None, :] * dx[..., None] +
+            v[None, None, :] * dy[..., None] +
+            axis[None, None, :] * dz[..., None]).reshape(-1, 3)
+
+        # build rays
+        o = o0.repeat(d.shape[0], 1)
+        wav = torch.full((d.shape[0],), float(wavelength), dtype=torch.float32, device=device)
+        ray = Ray(o, d, wav, device=device)
+
+        # optional pre-filter: keep only rays that pass the stop
+        if filter_to_stop and stop_i is not None:
+            _, valid = self.trace(ray, stop_ind=stop_i)
+            ray.o = ray.o[valid]
+            ray.d = ray.d[valid]
+            ray.wavelength = ray.wavelength[valid]
+
+        return ray
     def trace_to_sensor(self, ray: "Ray", ignore_invalid: bool = False) -> torch.Tensor:
         ray_final, valid = self.trace(ray)
         t = (self.d_sensor - ray_final.o[..., 2]) / (ray_final.d[..., 2].clamp_min(1e-12))
@@ -549,8 +611,14 @@ class Lensgroup(PrettyPrinter):
         fig, ax = plt.subplots(figsize=(5, 5))
         if log:
             from matplotlib.colors import LogNorm
-            eps = max(1e-6, img.max()*1e-6)
-            ax.imshow(img.T.numpy(), extent=extent, origin="lower", cmap=cmap, norm=LogNorm(vmin=eps, vmax=img.max() if img.max()>0 else 1))
+            if(img >0).any():
+                pos_min = float(img[img > 0].min().item())
+                eps = max(1e-12, pos_min * 0.5)
+            else:
+                eps = 1e-12
+            arr = img.T.numpy().copy()
+            arr[arr<=eps] = eps
+            ax.imshow(arr, extent=extent, origin="lower", cmap=cmap, norm=LogNorm(vmin=eps, vmax=img.max() if img.max()>0 else 1))
         else:
             ax.imshow(img.T.numpy(), extent=extent, origin="lower", cmap=cmap)
 
