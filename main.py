@@ -194,9 +194,7 @@ def run_sweep_D2(args) -> None:
     lens = build_lens(
         R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2,
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
-        stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
-        dispersion=args.dispersion,
-    )
+        stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop) )
     # find best focus as center
     D2_best = lens.best_focus_D2(D_mm=args.D, lam=args.lambda_nm, N=max(2000, args.N),
                                  D2_guess=args.D2, span=args.D2_span, steps=args.D2_steps,
@@ -234,7 +232,6 @@ def run_sweep_OD(args) -> None:
             R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=OD, D2=args.D2,
             pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
             stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
-            dispersion=args.dispersion,
         )
         if args.refocus_per_OD:
             D2_best = lens.best_focus_D2(D_mm=args.D, lam=args.lambda_nm, N=max(2000, args.N),
@@ -268,7 +265,6 @@ def run_field_grid(args) -> None:
         R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2,
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
-        dispersion=args.dispersion,
     )
     xs = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps)
     ys = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps)
@@ -276,7 +272,7 @@ def run_field_grid(args) -> None:
     rows = []
     for x in xs:
         for y in ys:
-            rays = lens.sample_offaxis_point( D_mm=args.D, wavelength=args.lambda_nm, N=args.N,
+            rays = lens.sample_offaxis_point_axis( D_mm=args.D, wavelength=args.lambda_nm, N=args.N,
                                         x_off_mm=float(x), y_off_mm=float(y), filter_to_stop=True)
             I = lens.render(rays, irr=1.0)
             if torch.max(I) > 0:
@@ -337,6 +333,9 @@ def parse_args():
     p.add_argument("--OD_list", nargs="+", type=float, help="OD sweep list [mm]")
     p.add_argument("--refocus_per_OD", action="store_true", help="Refocus (best D2) for each OD")
 
+    p.add_argument("--field_max_mm", type=float, default=1.0, help="Off-axis grid half-width [mm] at source plane")
+    p.add_argument("--field_steps", type=int, default=3, help="Off-axis grid steps per axis")
+
     # IO / misc
     p.add_argument("--out_dir", type=str, default="out", help="Output directory")
     p.add_argument("--prefix",  type=str, default="biconvex", help="Filename prefix for single run")
@@ -351,3 +350,6 @@ if __name__ == "__main__":
     # run_sweep_N(args)
     # run_sweep_lambda(args)
     run_offaxis(args)
+    run_sweep_D2(args)
+    run_sweep_OD(args)
+    run_field_grid(args)
