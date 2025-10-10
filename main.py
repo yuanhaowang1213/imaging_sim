@@ -311,7 +311,7 @@ def parse_args():
     # Source / sampling / sensor
     p.add_argument("--D",         type=float, default=1000.0, help="Object distance [mm]")
     p.add_argument("--lambda_nm", type=float, default=500.0,  help="Wavelength [nm]")
-    p.add_argument("--N",         type=int,   default=3200,   help="Rays (angle-uniform)")
+    p.add_argument("--N",         type=int,   default=1600,   help="Rays (angle-uniform)")
     p.add_argument("--M",         type=list,   default=[512,512],    help="Sensor MxM pixels")
     p.add_argument("--h",         type=float, default=3.2,    help="Sensor side length h [mm] (pixel_size=h/M)")
 

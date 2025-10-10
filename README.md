@@ -9,9 +9,9 @@ High level idea of the design and refered code could be found [here](./doc/gener
 
 ## Code Explaination
 
-The code was modified from ![do: A differentiable engine for Deep Lens design of computational imaging systems](https://github.com/vccimaging/DiffOptics). We added the PSF metrics function, corrected the rendering for even pixel size where there might be half pixel shifting, added sampling function from the object distance, enabled a build_lens function for paremeter tuning, tested the components in the code, simplified the code and etc.
+The code was modified from [do: A differentiable engine for Deep Lens design of computational imaging systems](https://github.com/vccimaging/DiffOptics). We added the PSF metrics function, corrected the rendering for even pixel size where there might be half pixel shifting, added sampling function from the object distance, enabled a build_lens function for paremeter tuning, tested the components in the code, simplified the code and etc.
 
-The main code explaination is ![here](./doc/codeexplanation.md)
+The main code explaination is [here](./doc/codeexplanation.md)
 
 ## Experiment Setup, Results and Analysis
 
