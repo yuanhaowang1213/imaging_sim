@@ -30,21 +30,25 @@ The ray tracing could be viewed as
 ![](../out/biconvex_rays.png)
 
 ## PSF Exmples
-After optimization, we found that placing the sensor at **20.3 mm** after the aperture yields the best focus.
+After optimization, we found that placing the sensor at **20.5 mm** after the aperture yields the best focus.
 ![](../out/biconvex_psf_log.png)
 
 ## N-sweep (sampling/)
-We sweeped N for {50, 100, 400,1600,3200,6400}, and calculated the **Metrics vs N**
+We sweeped N for {50, 100, 400,1600,3200,6400}, and calculated the **Metrics vs N**. 
+To further examine the focus sensitivity, we offset the sensor plane 2 mm away from the best-focus position (previously found at 20.5 mm) and repeated the PSF analysis. This deliberate defocus allows us to study how the spot size and energy distribution degrade when the image plane is displaced, providing a better understanding of depth-of-focus and system tolerance.
+
+
 
 |    N | ee50_mm | rms_radius_mm |
 | ---: | :-----: | :-----------: |
-|   50 | 0.05433 |    0.06684    |
-|  100 | 0.05395 |    0.06596    |
-|  400 | 0.05354 |    0.06503    |
-| 1600 | 0.05406 |    0.06455    |
-| 3200 | 0.05385 |    0.06442    |
-| 6400 | 0.05383 |    0.06432    |
-The convergence begins around N ≥ 1600, where the RMS and EE50 values stabilize to ~0.064 mm and ~0.0538 mm, respectively — indicating sufficient ray sampling density for accurate PSF estimation.
+|   50 | 0.05801 |    0.07419    |
+|  100 | 0.05957 |    0.07320    |
+|  400 | 0.06029 |    0.07220    |
+| 1600 | 0.05956 |    0.07168    |
+| 3200 | 0.05996 |    0.07153    |
+| 6400 | 0.06000 |    0.07142    |
+
+The convergence begins around N ≥ 1600, where the RMS and EE50 values stabilize to ~0.060 mm and ~0.071 mm, respectively — indicating sufficient ray sampling density for accurate PSF estimation. To get better simulation, we choose N=3200 for the rest of experiments.
 
 ### Wavelength Sweep
 
