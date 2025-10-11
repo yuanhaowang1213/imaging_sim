@@ -123,13 +123,13 @@ def run_sweep_N(args) ->None:
 # Experiment 2: wavelength sweep
 # --------------------------
 def run_sweep_lambda(args) -> None:
-    lambdas = args.lambda_list or [430, 460, 490, 520, 550, 580, 610, 640, 670]
+    lambdas = args.lambda_list or range(430,670,10)
     out_dir = Path(args.out_dir) / "sweep_lambda"; out_dir.mkdir(parents=True, exist_ok=True)
 
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
     pixel_size_mm = float(args.h) / float(args.M[0])
     lens = build_lens(
-        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2,
+        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD*2, D2=args.D2,
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
@@ -160,7 +160,7 @@ def run_offaxis(args) -> None:
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
     pixel_size_mm = float(args.h) / float(args.M[0])
     lens = build_lens(
-        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2,
+        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD*2, D2=args.D2, # use larger aperture to see the change 
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
@@ -262,12 +262,12 @@ def run_field_grid(args) -> None:
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
     pixel_size_mm = float(args.h) / float(args.M[1])
     lens = build_lens(
-        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2,
+        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD *2, D2=args.D2,  # use larger aperture to see the change 
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
-    xs = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps)
-    ys = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps)
+    xs = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps//2)
+    ys = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps//2)
 
     rows = []
     for x in xs:
@@ -287,6 +287,8 @@ def run_field_grid(args) -> None:
         w.writeheader(); [w.writerow(r) for r in rows]
     print(f"[field_grid] done: {out_dir.resolve()}")
 
+
+## More experiments
 
 
 # --------------------------
@@ -334,8 +336,8 @@ def parse_args():
     p.add_argument("--refocus_per_OD", action="store_true", help="Refocus (best D2) for each OD")
 
     # offset
-    p.add_argument("--field_max_mm", type=float, default=1.0, help="Off-axis grid half-width [mm] at source plane")
-    p.add_argument("--field_steps", type=int, default=3, help="Off-axis grid steps per axis")
+    p.add_argument("--field_max_mm", type=float, default=35.0, help="Off-axis grid half-width [mm] at source plane")
+    p.add_argument("--field_steps", type=int, default=36, help="Off-axis grid steps per axis")
 
     # IO / misc
     p.add_argument("--out_dir", type=str, default="out", help="Output directory")
@@ -347,10 +349,14 @@ if __name__ == "__main__":
     args = parse_args()
     torch.manual_seed(0); np.random.seed(0)
 
-    run_first(args)
-    run_sweep_N(args)
-    run_sweep_lambda(args)
-    run_offaxis(args)
-    run_sweep_D2(args)
-    run_sweep_OD(args)
+    # run_first(args)
+    # run_sweep_N(args)
+    # run_sweep_lambda(args)
+    # run_offaxis(args)
+    # run_sweep_D2(args)
+    # run_sweep_OD(args)
+    # run_field_grid(args)
+
+
+    # run_offaxis(args)
     run_field_grid(args)
