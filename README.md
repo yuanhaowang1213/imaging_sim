@@ -37,3 +37,33 @@ Detailed experiment setup and results are available in:
 - [doc/experiment.pdf](./doc/experiment.pdf)  
 - Simplified presentation slides: [doc/lenssimulation.pdf](./doc/lenssimulation.pdf)
 
+## Project Structure
+
+```
+imaging_sim/
+├── mlrt/                     # Core simulation modules
+│   ├── basics.py            # Ray, transformation, 
+│   ├── materials.py         # Materials defination
+│   └── optics.py            # Ray tracing, lens loading, plotting functions, etc.
+├── lenses/                  # Predefined lenses
+│   ├── LB1716.txt           # Thorlabs LB1716 lens
+│   ├── US02532751-1_f8.txt  # Double Gaussian lens with f=8
+│   ├── US02532751-1.txt     # Double Gaussian lens with f=4
+├── tests/                   # Unit tests for geometry and tracing
+│   ├── test_geo.py
+│   └── test_ray_tracing.py
+├── run.sh                   # Experiment scripts
+├── out/                     # Generated PSF images and metrics CSVs
+├── out_gaussian/            # Generated results for Double Gaussian lenses
+├── doc/                     # Documentation and experiment analysis
+│   ├── general.md
+│   ├── codeexplanation.md
+│   ├── experiment.md
+│   ├── experiment.pdf
+│   └── lenssimulation.pdf
+├── create_env.sh            # Environment setup
+├── run.sh                   # One-command entry point
+├── requirements.txt
+└── README.md
+
+```
