@@ -69,7 +69,7 @@ EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_lambda/metrics.c
 
 
 
-**Observation**: With BK7 dispersion enabled, the smallest PSF occurs near ~500 nm and grows toward both spectral ends. This matches expectation: the effective focal length shifts with $\lambda$ (chromatic focus), so a single sensor position cannot be perfectly focused for all wavelengths.
+**Observation**: With BK7 dispersion enabled, the smallest PSF occurs near ~500 nm and grows toward both spectral ends. This matches expectation: the effective focal length shifts with $\lambda$ (chromatic focus), so a single sensor position cannot be perfectly focused for all wavelengths in this design.
 
 ### Through-focus (D2 sweep)
 
@@ -93,13 +93,13 @@ EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_OD/metrics.csv) 
 We consider a larger aperture **6.35 mm (f/4)** for this experiment to have a better view of the results.
 
 
-We illustrate the **N = 50, 400, 3200**, respectively and more to be found in the [folder](../out/sweep_N)
+We illustrate the **offset of -35 mm , 0, 35 mm**, respectively and more to be found in the [folder](../out/offaxis/)
 | Off axis = -35 mm | Off axis = 0 mm | Off axis = 35 mm|
 |:-------:|:--------:|:---------:|
 | ![PSF -35](../out/offaxis/biconvex_psf_-35.00_log.png) | ![PSF 1](../out/sweep_N/biconvex_psf_3200_log.png) | ![PSF 610](../out/offaxis/biconvex_psf_35.00_log.png)  |
 
 
-EE50 and RMS metrics are recorded in [metrics.csv](../out/offaxis/metrics.csv) and ploted ![](../out/offaxis/metrics_vs_x_off_mm.png)
+RMS metrics are recorded in [metrics.csv](../out/offaxis/metrics.csv) and ploted ![](../out/offaxis/metrics_vs_x_off_mm.png)
 
 **Observation**:As the source moves off-axis, the PSF centroid shifts roughly linearly with field while the core size stays nearly constant for small offsets, with only mild broadening/asymmetry (coma) appearing as the field angle increases.
 
@@ -213,3 +213,23 @@ Major outcomes and improvements include:
 
     - Expected optical trends reproduced for wavelength, focus distance, aperture, and field angle.
 
+## Extra (Double Gassian results)
+Futher, we consider a double Gaussian Lens  [US253251A](https://patents.google.com/patent/US2532751), and conducted following experiments
+
+- Wavelength ($\lambda$) sweep
+- Off-axis sweep
+
+
+We consider a larger aperture **(f/4 equal)** for this experiment to have a better view of the results. We illustrate the **offset of -35 mm , 0, 35 mm**, respectively and more to be found in the [folder](../out_gaussian/offaxis/)
+
+### Different wavelength sweep
+RMS metrics are recorded in [metrics.csv](../out_gaussian/sweep_lambda/metrics.csv) and ploted ![](../out_gaussian/sweep_lambda/metrics_vs_lambda_nm.png)
+
+### Off axis sweep
+| Off axis = -35 mm | Off axis = -1 mm | Off axis = 35 mm|
+|:-------:|:--------:|:---------:|
+| ![PSF -35](../out_gaussian/offaxis/biconvex_psf_-35.00_log.png) | ![PSF 1](../out_gaussian/offaxis/biconvex_psf_-1.00_log.png) | ![PSF 610](../out_gaussian/offaxis/biconvex_psf_35.00_log.png)  |
+
+
+
+We found that with improved lens design, artifacts such as coma and aberration were significantly reduced, leading to better focus consistency across different wavelengths. This improvement is especially evident in the double-Gaussian design.
