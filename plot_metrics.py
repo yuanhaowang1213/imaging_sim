@@ -136,6 +136,25 @@ plot_metrics_from_csv(
     xlabel="Aperture OD (mm)"
 )
 
+## Double Gaussian
+# sweep lambda (aperture diameter)
+plot_metrics_from_csv(
+    "out_gaussian/sweep_lambda/metrics.csv",
+    xkey="lambda_nm",
+    ykeys=[ "rms_radius_mm"],
+    title="PSF metrics vs Aperture Diameter",
+    xlabel="Aperture OD (mm)"
+)
+
+# sweep 1D offaxis
+plot_metrics_from_csv(
+    "out_gaussian/offaxis/metrics.csv",
+    xkey="x_off_mm",
+    ykeys=[ "rms_radius_mm"],
+    title="PSF metrics vs Aperture Diameter",
+    xlabel="Aperture OD (mm)"
+)
+
 # # sweep field
 # plot_metrics_from_csv("out/field_grid/metrics.csv",
 #                       xkey=None,  # 

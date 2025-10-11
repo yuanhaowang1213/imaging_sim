@@ -9,7 +9,7 @@ python3 main.py --exp single --OD 3.175
 # Ray-count sweep (sampling / aliasing study)
 python3 main.py --exp sweep_N --OD 6.35 --D2 20.3 --N_list 50 100 400 1600 3200 6400
 
-# Ray-count sweep (sampling / aliasing study)
+# lambda sweep (sampling / aliasing study)
 python3 main.py --exp sweep_lambda 
 
 # Off-axis sweep (±35 mm at source plane, 36 steps total)

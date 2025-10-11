@@ -16,7 +16,7 @@ from mlrt.basics import Ray
 
 
 def build_lens(
-    pixel_size_mm: float, film_M: list[int], device: torch.device,
+    pixel_size_mm: float, film_M: list[int], device: torch.device,lensfile: str="./lenses/US02532751-1.txt"
 ) -> Lensgroup:
     """
     Geometry:
@@ -101,7 +101,7 @@ def run_sweep_lambda(args) -> None:
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
     pixel_size_mm = float(args.h) / float(args.M[0])
     lens = build_lens(
-        pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
+        pixel_size_mm=pixel_size_mm, film_M=args.M, device=device, lensfile="./lenses/US02532751-1_f8.txt"
     )
 
     rows = []
