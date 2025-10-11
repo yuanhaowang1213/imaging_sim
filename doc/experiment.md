@@ -33,10 +33,11 @@ The ray tracing could be viewed as
 
 ### PSF Exmples
 After optimization, we found that placing the sensor (in mm) at following list  after the aperture (in mm) yields the best focus.
-| Aperture = 1.6 | Aperture = 3.175  | Aperture = 6.35  |Aperture = 12.7  |
-|:-------:|:--------:|:---------:|:---------:|
-|20.55|20.5|20.3|18.7|
+|       **Aperture (mm)**      | **1.6 (f/16)** | **3.175 (f/8)** | **6.35 (f/4)** | **12.7 (f/2)** |
+| :--------------------------: | :------------: | :-------------: | :------------: | :------------: |
+| **Best Focus Distance (mm)** |      20.55     |       20.5      |      20.3      |      18.7      |
 
+**Observation**: The best sensor-to-aperture distance varies slightly with aperture size, showing a shift from 20.55 mm at f/16 to 18.7 mm at f/2 due to increased spherical aberration at larger apertures.
 
 ![](../out/biconvex_psf_log.png)
 
@@ -54,7 +55,7 @@ We illustrate the **N = 50, 400, 3200**, respectively and more to be found in th
 
 EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_N/metrics.csv) and ploted ![](../out/sweep_N/metrics_vs_N.png)
 
-**Observation**: The convergence begins around N ≥ 1600, where the RMS and EE50 values stabilize to ~0.045 mm and ~0.021 mm, respectively — indicating sufficient ray sampling density for accurate PSF estimation. To get better simulation, we choose N=3200 for the rest of experiments.
+**Observation**: The convergence begins around N ≥ 1600, where the RMS values stabilize to ~0.045 mm and ~0.021 mm, respectively — indicating sufficient ray sampling density for accurate PSF estimation. To get better simulation, we choose N=3200 for the rest of experiments.
 
 ### Wavelength Sweep
 
