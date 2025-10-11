@@ -37,7 +37,3 @@ Detailed experiment setup and results are available in:
 - [doc/experiment.pdf](./doc/experiment.pdf)  
 - Simplified presentation slides: [doc/lenssimulation.pdf](./doc/lenssimulation.pdf)
 
-
-
-
-
