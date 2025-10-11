@@ -81,7 +81,8 @@ def run_first(args) -> None:
         I = I / torch.max(I) 
     lens.plot_psf(I, show=False, log=True, fname=out_dir / f"{args.prefix}_psf_log.png")
     dis = lens.best_focus_D2( D_mm = args.D, lam=500.0, N=5000, D2_guess=None, span=args.D2_span, steps=21, use_spot=True) - args.stop_after_s2_mm
-    print(f'the optimal distance between the sensor and the aperture {dis} mm')
+    print(f'the optimal distance between the sensor and the aperture ({args.OD}) {dis} mm')
+    ## 20.55 for 1.6, 20.5 for 3.175, 20.3 for 6.35, 18.7 for 12.7
     m = lens.psf_metrics( I)
     with open(out_dir / f"{args.prefix}_metrics.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(m.keys()))
@@ -97,7 +98,7 @@ def run_sweep_N(args) ->None:
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
     pixel_size_mm = float(args.h) / float(args.M[1])
     lens = build_lens(
-        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD*2, D2=args.D2, # use larger aperture to see the change of sampling effect
+        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2, # use larger aperture to see the change of sampling effect
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
@@ -160,7 +161,7 @@ def run_offaxis(args) -> None:
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
     pixel_size_mm = float(args.h) / float(args.M[0])
     lens = build_lens(
-        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD*2, D2=args.D2, # use larger aperture to see the change 
+        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2, # use larger aperture to see the change 
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
@@ -254,38 +255,38 @@ def run_sweep_OD(args) -> None:
     print(f"[sweep_OD] done: {out_dir.resolve()}")
 
 
-# --------------------------
-#  Experiment 6 — Field map (2D off-axis grid)
-# --------------------------
-def run_field_grid(args) -> None:
-    out_dir = Path(args.out_dir) / "field_grid"; out_dir.mkdir(parents=True, exist_ok=True)
-    device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
-    pixel_size_mm = float(args.h) / float(args.M[1])
-    lens = build_lens(
-        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD *2, D2=args.D2,  # use larger aperture to see the change 
-        pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
-        stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
-    )
-    xs = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps//4)
-    ys = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps//4)
+# # --------------------------
+# #  Experiment 6 — Field map (2D off-axis grid)
+# # --------------------------
+# def run_field_grid(args) -> None:
+#     out_dir = Path(args.out_dir) / "field_grid"; out_dir.mkdir(parents=True, exist_ok=True)
+#     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
+#     pixel_size_mm = float(args.h) / float(args.M[1])
+#     lens = build_lens(
+#         R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD *2, D2=args.D2,  # use larger aperture to see the change 
+#         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
+#         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
+#     )
+#     xs = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps//4)
+#     ys = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps//4)
 
-    rows = []
-    for x in xs:
-        for y in ys:
-            rays = lens.sample_offaxis_point_axis( D_mm=args.D, wavelength=args.lambda_nm, N=args.N,
-                                        x_off_mm=float(x), y_off_mm=float(y), filter_to_stop=True)
-            I = lens.render(rays, irr=1.0)
-            if torch.max(I) > 0:
-                I_disp = I / (torch.max(I) + 1e-12); I_ene = I / (torch.sum(I) + 1e-12)
-                tag = f"{x:+.2f}_{y:+.2f}".replace('+','p').replace('-','m')
-                lens.plot_psf(I_disp, show=False, log=True, fname=out_dir / f"{args.prefix}_psf_{tag}_log.png")
-                m = lens.psf_metrics(I_ene); m["x_off_mm"] = float(x); m["y_off_mm"] = float(y)
-                rows.append(m)
+#     rows = []
+#     for x in xs:
+#         for y in ys:
+#             rays = lens.sample_offaxis_point_axis( D_mm=args.D, wavelength=args.lambda_nm, N=args.N,
+#                                         x_off_mm=float(x), y_off_mm=float(y), filter_to_stop=True)
+#             I = lens.render(rays, irr=1.0)
+#             if torch.max(I) > 0:
+#                 I_disp = I / (torch.max(I) + 1e-12); I_ene = I / (torch.sum(I) + 1e-12)
+#                 tag = f"{x:+.2f}_{y:+.2f}".replace('+','p').replace('-','m')
+#                 lens.plot_psf(I_disp, show=False, log=True, fname=out_dir / f"{args.prefix}_psf_{tag}_log.png")
+#                 m = lens.psf_metrics(I_ene); m["x_off_mm"] = float(x); m["y_off_mm"] = float(y)
+#                 rows.append(m)
 
-    with open(out_dir / "metrics.csv", "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["x_off_mm","y_off_mm","sum","cx_mm","cy_mm","r_centroid_mm","rms_radius_mm","ee50_mm"])
-        w.writeheader(); [w.writerow(r) for r in rows]
-    print(f"[field_grid] done: {out_dir.resolve()}")
+#     with open(out_dir / "metrics.csv", "w", newline="") as f:
+#         w = csv.DictWriter(f, fieldnames=["x_off_mm","y_off_mm","sum","cx_mm","cy_mm","r_centroid_mm","rms_radius_mm","ee50_mm"])
+#         w.writeheader(); [w.writerow(r) for r in rows]
+#     print(f"[field_grid] done: {out_dir.resolve()}")
 
 
 ## More experiments
@@ -319,7 +320,7 @@ def parse_args():
 
     # Experiment control
     p.add_argument("--exp", type=str, default="all",
-                   choices=["all","single","sweep_N","sweep_lambda","offaxis"],
+                   choices=["all","single","sweep_N","sweep_lambda","offaxis","sweep_D2","sweep_OD"],
                    help="Which experiment to run")
 
     # Optional lists
@@ -349,14 +350,35 @@ if __name__ == "__main__":
     args = parse_args()
     torch.manual_seed(0); np.random.seed(0)
 
-    run_first(args)
-    run_sweep_N(args)
-    run_sweep_lambda(args)
-    run_offaxis(args)
-    run_sweep_D2(args)
-    run_sweep_OD(args)
-    run_field_grid(args)
+    if args.exp == "single":
+        run_first(args)
+
+    elif args.exp == "sweep_N":
+        run_sweep_N(args)
+
+    elif args.exp == "sweep_lambda":
+        run_sweep_lambda(args)
+
+    elif args.exp == "offaxis":
+        run_offaxis(args)
+
+    elif args.exp == "sweep_D2":
+        run_sweep_D2(args)
+
+    elif args.exp == "sweep_OD":
+        run_sweep_OD(args)
 
 
-    # run_offaxis(args)
-    # run_field_grid(args)
+
+    elif args.exp == "all":
+        # Run a reasonable full set. Adjust as you like.
+        run_first(args)
+        run_sweep_N(args)
+        run_sweep_lambda(args)
+        run_offaxis(args)
+        run_sweep_D2(args)
+        run_sweep_OD(args)
+
+    else:
+        raise ValueError(f"Unknown exp: {args.exp}")
+

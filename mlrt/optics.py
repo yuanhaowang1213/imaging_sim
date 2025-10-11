@@ -606,7 +606,7 @@ class Lensgroup(PrettyPrinter):
             x_half = max(self.film_size) * self.pixel_size / 2.0  # [mm]
             z_s = float(self.d_sensor)
             ax.plot([z_s, z_s], [-x_half, x_half], "r--", lw=1.0, label="sensor")
-            ax.legend(loc="best")
+            ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), borderaxespad=0.)
 
         ax.set_aspect("equal", adjustable="box")
         ax.set_xlabel("z [mm]")

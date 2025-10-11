@@ -32,7 +32,12 @@ The ray tracing could be viewed as
 ![](../out/biconvex_rays.png)
 
 ### PSF Exmples
-After optimization, we found that placing the sensor at **20.5 mm** after the aperture yields the best focus.
+After optimization, we found that placing the sensor (in mm) at following list  after the aperture (in mm) yields the best focus.
+| Aperture = 1.6 | Aperture = 3.175  | Aperture = 6.35  |Aperture = 12.7  |
+|:-------:|:--------:|:---------:|:---------:|
+|20.55|20.5|20.3|18.7|
+
+
 ![](../out/biconvex_psf_log.png)
 
 ### N-sweep (sampling)
