@@ -57,7 +57,7 @@ def plot_metrics_from_csv(
         plt.xlabel(xlabel or xkey)
         plt.ylabel(ylabel)
         if title: plt.title(title)
-        if len(ykeys) > 1: plt.legend()
+        if len(ykeys) >= 1: plt.legend()
         plt.tight_layout()
         out_file = out_dir / f"{out_prefix}_vs_{xkey}.png"
         plt.savefig(out_file, dpi=200, bbox_inches="tight")
