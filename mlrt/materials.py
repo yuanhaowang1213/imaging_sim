@@ -21,6 +21,12 @@ class Material:
             "air": [1.000293, math.inf],
             "occluder": [1.0, math.inf],  # for aperture
             "bk7": [1.51680, 64.17],
+
+            "sk1":        [1.61030,  56.712],
+            "sk16":       [1.62040,  60.306],
+            "ssk4":       [1.61770,  55.116],
+            "f15":        [1.60570,  37.831],
+
         }
         self.A, self.B = self._lookup_material()
         if not self.dispersion:

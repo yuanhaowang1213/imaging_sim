@@ -266,8 +266,8 @@ def run_field_grid(args) -> None:
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
-    xs = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps//2)
-    ys = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps//2)
+    xs = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps//4)
+    ys = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps//4)
 
     rows = []
     for x in xs:
@@ -349,14 +349,14 @@ if __name__ == "__main__":
     args = parse_args()
     torch.manual_seed(0); np.random.seed(0)
 
-    # run_first(args)
-    # run_sweep_N(args)
-    # run_sweep_lambda(args)
-    # run_offaxis(args)
-    # run_sweep_D2(args)
-    # run_sweep_OD(args)
-    # run_field_grid(args)
-
-
-    # run_offaxis(args)
+    run_first(args)
+    run_sweep_N(args)
+    run_sweep_lambda(args)
+    run_offaxis(args)
+    run_sweep_D2(args)
+    run_sweep_OD(args)
     run_field_grid(args)
+
+
+    # run_offaxis(args)
+    # run_field_grid(args)

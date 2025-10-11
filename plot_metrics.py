@@ -104,33 +104,33 @@ def plot_metrics_from_csv(
 # sweep N
 plot_metrics_from_csv("out/sweep_N/metrics.csv",
                       xkey="N",
-                      ykeys=["ee50_mm", "rms_radius_mm"],
+                      ykeys=[ "rms_radius_mm","ee50_mm"],
                       title="PSF metrics vs N",
                       xlabel="N (rays)")
 
 # sweep lambda
 plot_metrics_from_csv("out/sweep_lambda/metrics.csv",
                       xkey="lambda_nm",
-                      ykeys=["ee50_mm", "rms_radius_mm"],
+                      ykeys=[ "rms_radius_mm","ee50_mm"],
                       title="PSF metrics vs Wavelength",
                       xlabel="Wavelength (nm)")
 # sweep 1D offaxis
 plot_metrics_from_csv("out/offaxis/metrics.csv",
                       xkey="x_off_mm",
-                      ykeys=["ee50_mm", "rms_radius_mm"],
+                      ykeys=["rms_radius_mm"],
                       title="Off-axis PSF metrics",
                       xlabel="Source x-offset (mm)")
 # sweep d2 
 plot_metrics_from_csv("out/sweep_D2/metrics.csv",
                       xkey="D2",
-                      ykeys=["ee50_mm", "rms_radius_mm"],
+                      ykeys=[ "rms_radius_mm","ee50_mm"],
                       title="Through-focus metrics",
                       xlabel="D2 (mm)")
 # sweep OD (aperture diameter)
 plot_metrics_from_csv(
     "out/sweep_OD/metrics.csv",
     xkey="OD",
-    ykeys=["ee50_mm", "rms_radius_mm"],
+    ykeys=[ "rms_radius_mm","ee50_mm"],
     title="PSF metrics vs Aperture Diameter",
     xlabel="Aperture OD (mm)"
 )
@@ -138,5 +138,5 @@ plot_metrics_from_csv(
 # sweep field
 plot_metrics_from_csv("out/field_grid/metrics.csv",
                       xkey=None,  # 
-                      ykeys=["ee50_mm", "rms_radius_mm"],
+                      ykeys=[ "rms_radius_mm","ee50_mm"],
                       title="Field map")

@@ -189,9 +189,7 @@ def run_field_grid(args) -> None:
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
     pixel_size_mm = float(args.h) / float(args.M[1])
     lens = build_lens(
-        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD *2, D2=args.D2,  # use larger aperture to see the change 
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
-        stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
     xs = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps)
     ys = np.linspace(-args.field_max_mm, args.field_max_mm, args.field_steps)
@@ -225,17 +223,7 @@ def parse_args():
     p = argparse.ArgumentParser(
         description="Biconvex lens PSF experiments (single / sweeps)."
     )
-    # Geometry
-    p.add_argument("--R1", type=float, default=24.5, help="Front radius R1 [mm] (convex>0)")
-    p.add_argument("--T",  type=float, default=9.0,  help="Center thickness T [mm]")
-    p.add_argument("--R2", type=float, default=-24.5,help="Back radius R2 [mm] (convex to sensor often negative)")
-    p.add_argument("--LD", type=float, default=25.4, help="Diameter of the lens [mm]")
-    p.add_argument("--OD", type=float, default=3.175, help="Aperture diameter OD [mm]")
-    p.add_argument("--D2", type=float, default=20.5, help="Aperture to sensor distance [mm]")
 
-    # Stop
-    p.add_argument("--stop_after_s2_mm", type=float, default=2.0, help="Stop position after S2 [mm]")
-    p.add_argument("--no_stop", action="store_true", help="Disable explicit AIR–AIR stop")
 
     # Source / sampling / sensor
     p.add_argument("--D",         type=float, default=1000.0, help="Object distance [mm]")
@@ -267,7 +255,7 @@ def parse_args():
     p.add_argument("--field_steps", type=int, default=36, help="Off-axis grid steps per axis")
 
     # IO / misc
-    p.add_argument("--out_dir", type=str, default="out", help="Output directory")
+    p.add_argument("--out_dir", type=str, default="out_gaussian", help="Output directory")
     p.add_argument("--prefix",  type=str, default="biconvex", help="Filename prefix for single run")
     p.add_argument("--cuda",    action="store_true", help="Use CUDA if available")
 
@@ -285,5 +273,5 @@ if __name__ == "__main__":
     # run_field_grid(args)
 
 
-    run_offaxis(args)
-    run_field_grid(args)
+    # run_offaxis(args)
+    # run_field_grid(args)
