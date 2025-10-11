@@ -87,6 +87,12 @@ EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_OD/metrics.csv) 
 We consider a larger aperture **6.35 mm (f/4)** for this experiment to have a better view of the results.
 
 
+We illustrate the **N = 50, 400, 3200**, respectively and more to be found in the [folder](../out/sweep_N)
+| Off axis = -11 mm | Off axis = 1 mm | Off axis = 11 mm|
+|:-------:|:--------:|:---------:|
+| ![PSF -11](../out/offaxis/biconvex_psf_-11.00_log.png) | ![PSF 1](../out/offaxis/biconvex_psf_1.00_log.png) | ![PSF 610](../out/offaxis/biconvex_psf_11.00_log.png)  |
+
+
 EE50 and RMS metrics are recorded in [metrics.csv](../out/offaxis/metrics.csv) and ploted ![](../out/offaxis/metrics_vs_x_off_mm.png)
 
 **Observation**:As the source moves off-axis, the PSF centroid shifts roughly linearly with field while the core size stays nearly constant for small offsets, with only mild broadening/asymmetry (coma/astigmatism tails) appearing as the field angle increases.

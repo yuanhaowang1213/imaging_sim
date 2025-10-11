@@ -13,9 +13,11 @@ The code was modified from [do: A differentiable engine for Deep Lens design of 
 
 The main code explaination is [here](./doc/codeexplanation.md)
 
+To run the code 
+
 ## Experiment Setup, Results and Analysis
 
-
+The detailed experiment could be found in [doc/experiment.md](./doc/experiment.md) and simplified slides could be found in [doc/lenssimulation.pdf](./doc/lenssimulation.pdf)
 
 
 
