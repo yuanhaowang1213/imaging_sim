@@ -3,6 +3,7 @@ python3 main.py --exp single --OD 1.6
 python3 main.py --exp single --OD 3.175
 python3 main.py --exp single --OD 6.35
 python3 main.py --exp single --OD 12.7
+python3 main.py --exp single --OD 3.175
 
 
 # Ray-count sweep (sampling / aliasing study)
