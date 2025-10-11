@@ -88,9 +88,9 @@ We consider a larger aperture **6.35 mm (f/4)** for this experiment to have a be
 
 
 We illustrate the **N = 50, 400, 3200**, respectively and more to be found in the [folder](../out/sweep_N)
-| Off axis = -11 mm | Off axis = 1 mm | Off axis = 11 mm|
+| Off axis = -35 mm | Off axis = 0 mm | Off axis = 35 mm|
 |:-------:|:--------:|:---------:|
-| ![PSF -11](../out/offaxis/biconvex_psf_-11.00_log.png) | ![PSF 1](../out/offaxis/biconvex_psf_1.00_log.png) | ![PSF 610](../out/offaxis/biconvex_psf_11.00_log.png)  |
+| ![PSF -35](../out/offaxis/biconvex_psf_-35.00_log.png) | ![PSF 1](../out/sweep_N/biconvex_psf_3200_log.png) | ![PSF 610](../out/offaxis/biconvex_psf_35.00_log.png)  |
 
 
 EE50 and RMS metrics are recorded in [metrics.csv](../out/offaxis/metrics.csv) and ploted ![](../out/offaxis/metrics_vs_x_off_mm.png)
