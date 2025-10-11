@@ -58,8 +58,28 @@ The convergence begins around N ≥ 1600, where the RMS and EE50 values stabiliz
 
 ### Wavelength Sweep
 
-We sweep wavelength for **[430, 460, 490, 520, 550, 580, 610, 640, 670]**, a range of 
+We sweep wavelength for **[430, 460, 490, 520, 550, 580, 610, 640, 670]**, a range of vible spectrum.
+| lambda = 430 | lambda = 520 | lambda = 610 |
+|:-------:|:--------:|:---------:|
+| ![PSF 430](../out/sweep_lambda/biconvex_psf_430_log.png) | ![PSF 520](../out/sweep_lambda/biconvex_psf_520_log.png) | ![PSF 610](../out/sweep_lambda/biconvex_psf_610_log.png)  |
 
+
+Metrics EE50 and rms are:
+
+| λ (nm) | EE50 radius (mm) | RMS radius (mm) |
+| -----: | ---------------: | --------------: |
+|    430 |         0.009748 |         0.01079 |
+|    460 |         0.004470 |        0.006659 |
+|    490 |         0.004428 |        0.004587 |
+|    520 |         0.004394 |        0.004423 |
+|    550 |         0.004474 |        0.006100 |
+|    580 |         0.009777 |        0.007984 |
+|    610 |         0.009838 |        0.009798 |
+|    640 |         0.009936 |         0.01140 |
+|    670 |          0.01006 |         0.01281 |
+
+
+With BK7 dispersion enabled, the smallest PSF occurs near ~500 nm and grows toward both spectral ends. This matches expectation: the effective focal length shifts with λ (chromatic focus), so a single sensor position cannot be perfectly focused for all wavelengths.
 
 ### Through-focus (D2 sweep)
 
