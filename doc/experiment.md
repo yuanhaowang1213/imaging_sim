@@ -37,15 +37,13 @@ After optimization, we found that placing the sensor at **20.5 mm** after the ap
 We sweeped N for **[50, 100, 400,1600,3200,6400]**, and calculated the **Metrics vs N**. 
 To further examine the focus sensitivity, we use a lareger aperture **OD = 6.35** and repeated the PSF analysis. This deliberate defocus allows us to study how the spot size and energy distribution degrade when the image plane is displaced, providing a better understanding of depth-of-focus and system tolerance.
 
+
 We illustrate the **N = 50, 400, 3200**, respectively and more to be found in the [folder](../out/sweep_N)
-| N = 50 | N = 400 | N = 3200 |
-|:-------:|:--------:|:---------:|
-| ![PSF 50](../out/sweep_N/biconvex_psf_50_log.png) | ![PSF 400](../out/sweep_N/biconvex_psf_400_log.png) | ![PSF 400](../out/sweep_N/biconvex_psf_3200_log.png)  |
 
 
 EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_N/metrics.csv) and ploted ![](../out/sweep_N/metrics_vs_N.png)
 
-The convergence begins around N ≥ 1600, where the RMS and EE50 values stabilize to ~0.045 mm and ~0.021 mm, respectively — indicating sufficient ray sampling density for accurate PSF estimation. To get better simulation, we choose N=3200 for the rest of experiments.
+**Observation**: The convergence begins around N ≥ 1600, where the RMS and EE50 values stabilize to ~0.045 mm and ~0.021 mm, respectively — indicating sufficient ray sampling density for accurate PSF estimation. To get better simulation, we choose N=3200 for the rest of experiments.
 
 ### Wavelength Sweep
 
@@ -59,7 +57,7 @@ EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_lambda/metrics.c
 
 
 
-With BK7 dispersion enabled, the smallest PSF occurs near ~500 nm and grows toward both spectral ends. This matches expectation: the effective focal length shifts with λ (chromatic focus), so a single sensor position cannot be perfectly focused for all wavelengths.
+**Observation**: With BK7 dispersion enabled, the smallest PSF occurs near ~500 nm and grows toward both spectral ends. This matches expectation: the effective focal length shifts with λ (chromatic focus), so a single sensor position cannot be perfectly focused for all wavelengths.
 
 ### Through-focus (D2 sweep)
 
@@ -67,6 +65,9 @@ We sweep D2 for range **range (19.5,21.5,13) mm,**, the best focus is at 20.5
 
 
 EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_D2/metrics.csv) and ploted ![](../out/sweep_D2/metrics_vs_D2.png)
+
+
+**Observation**: As we move away from 20.5 mm (toward 20.33 or 20.66 and beyond), RMS and EE50 grow smoothly, indicating increasing defocus blur. The growth is slightly asymmetric—typical once real lens aberrations are present. The sweep cleanly identifies **20.5 mm** as the optimal aperture-to-sensor distance for this configuration, with predictable defocus behavior on either side.
 
 ### Aperture Sweep (OD)
 
