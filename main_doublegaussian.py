@@ -221,9 +221,8 @@ def run_field_grid(args) -> None:
 # --------------------------
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Biconvex lens PSF experiments (single / sweeps)."
+        description="Double Gaussian lens PSF experiments (single / sweeps)."
     )
-
 
     # Source / sampling / sensor
     p.add_argument("--D",         type=float, default=1000.0, help="Object distance [mm]")
@@ -266,8 +265,8 @@ if __name__ == "__main__":
 
     # run_first(args)
     # run_sweep_N(args)
-    # run_sweep_lambda(args)
-    # run_offaxis(args)
+    run_sweep_lambda(args)
+    run_offaxis(args)
     # run_sweep_D2(args)
     # run_sweep_OD(args)
     # run_field_grid(args)

@@ -117,7 +117,7 @@ plot_metrics_from_csv("out/sweep_lambda/metrics.csv",
 # sweep 1D offaxis
 plot_metrics_from_csv("out/offaxis/metrics.csv",
                       xkey="x_off_mm",
-                      ykeys=["rms_radius_mm"],
+                      ykeys=["rms_radius_mm, cx_mm"],
                       title="Off-axis PSF metrics",
                       xlabel="Source x-offset (mm)")
 # sweep d2 
