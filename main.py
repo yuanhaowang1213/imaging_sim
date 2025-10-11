@@ -129,7 +129,7 @@ def run_sweep_lambda(args) -> None:
     device = torch.device("cuda" if (args.cuda and torch.cuda.is_available()) else "cpu")
     pixel_size_mm = float(args.h) / float(args.M[0])
     lens = build_lens(
-        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD*2, D2=args.D2,
+        R1=args.R1, T=args.T, R2=args.R2, LD=args.LD, OD=args.OD, D2=args.D2,
         pixel_size_mm=pixel_size_mm, film_M=args.M, device=device,
         stop_after_s2_mm=args.stop_after_s2_mm, add_explicit_stop=(not args.no_stop),
     )
