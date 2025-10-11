@@ -95,7 +95,7 @@ We illustrate the **N = 50, 400, 3200**, respectively and more to be found in th
 
 EE50 and RMS metrics are recorded in [metrics.csv](../out/offaxis/metrics.csv) and ploted ![](../out/offaxis/metrics_vs_x_off_mm.png)
 
-**Observation**:As the source moves off-axis, the PSF centroid shifts roughly linearly with field while the core size stays nearly constant for small offsets, with only mild broadening/asymmetry (coma/astigmatism tails) appearing as the field angle increases.
+**Observation**:As the source moves off-axis, the PSF centroid shifts roughly linearly with field while the core size stays nearly constant for small offsets, with only mild broadening/asymmetry (coma) appearing as the field angle increases.
 
 
 ## Discusion and Qualitative Analysis
