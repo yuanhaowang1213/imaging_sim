@@ -5,21 +5,38 @@ Angle-grid ray tracing from an on-axis point source to PSF on the sensor
 Simulate ray propagation from a single scene point through a simple biconvex lens to a discrete sensor plane, produce the PSF (energy distribution on sensor), and study how sampling, wavelength, field angle, focus, and aperture affect image quality. We use geometric optics (Snell), BK7 glass, and ignore diffraction and internal reflections.
 ## High level design
 
-High level idea of the design and refered code could be found [here](./doc/general.md)
+A high-level overview and referenced code are in[./doc/general.md](./doc/general.md)
 
-## Code Explaination
+## Code Explanation
 
-The code was modified from [do: A differentiable engine for Deep Lens design of computational imaging systems](https://github.com/vccimaging/DiffOptics). We added the PSF metrics function, corrected the rendering for even pixel size where there might be half pixel shifting, added sampling function from the object distance, enabled a build_lens function for paremeter tuning, tested the components in the code, simplified the code and etc.
+The code was modified from [do: A differentiable engine for Deep Lens design of computational imaging systems](https://github.com/vccimaging/DiffOptics).
+
+Main modifications include:
+- Added **PSF metrics computation** (RMS radius, EE50 radius).  
+- Corrected **rendering alignment** for even pixel sizes (eliminating half-pixel shift).  
+- Added **sampling functions** based on object distance.  
+- Implemented **build_lens()** for parameter tuning and multi-surface lens construction.  
+- Conducted **unit tests** for individual components.  
+- Simplified and modularized the codebase for clarity and maintainability.
+- Others
 
 ### Environment
-To install the dependency, please refer [here](./create_env.sh)
+To install the dependency, please refer to [create_env.sh](./create_env.sh). The code mainly use pytorch, matplotlib, numpy, scipy, pytest. 
 
-### Code running
-The main code explaination is [here](./doc/codeexplanation.md)
+### Running the code 
+Detailed explanations of each module can be found in [doc/codeexplanation.md](./doc/codeexplanation.md).  
+The main entry point is described in [run.sh](./run.sh).
+```bash
+sh run.sh
+```
 
 ## Experiment Setup, Results and Analysis
 
-The detailed experiment could be found in [doc/experiment.md](./doc/experiment.md) and simplified slides could be found in [doc/lenssimulation.pdf](./doc/lenssimulation.pdf)
+Detailed experiment setup and results are available in:
+- [doc/experiment.md](./doc/experiment.md)  
+- [doc/experiment.pdf](./doc/experiment.pdf)  
+- Simplified presentation slides: [doc/lenssimulation.pdf](./doc/lenssimulation.pdf)
+
 
 
 

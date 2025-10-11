@@ -233,7 +233,7 @@ def parse_args():
 
     # Experiment control
     p.add_argument("--exp", type=str, default="all",
-                   choices=["all","single","sweep_N","sweep_lambda","offaxis"],
+                   choices=["all", "sweep_lambda","offaxis"],
                    help="Which experiment to run")
 
     # Optional lists
@@ -263,14 +263,19 @@ if __name__ == "__main__":
     args = parse_args()
     torch.manual_seed(0); np.random.seed(0)
 
-    # run_first(args)
-    # run_sweep_N(args)
-    run_sweep_lambda(args)
-    run_offaxis(args)
-    # run_sweep_D2(args)
-    # run_sweep_OD(args)
-    # run_field_grid(args)
+    if args.exp == "sweep_lambda":
+        run_sweep_lambda(args)
+
+    elif args.exp == "offaxis":
+        run_offaxis(args)
 
 
+    elif args.exp == "all":
+        # Run a reasonable full set. Adjust as you like.
+        run_sweep_lambda(args)
+        run_offaxis(args)
+
+    else:
+        raise ValueError(f"Unknown exp: {args.exp}")
     # run_offaxis(args)
     # run_field_grid(args)

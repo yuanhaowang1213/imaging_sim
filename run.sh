@@ -21,3 +21,9 @@ python3 main.py --exp sweep_D2 --D2_span 6 --D2_steps 31 --D2_sweep_span 1 --D2_
 # Aperture sweep with per-aperture refocus
 python3 main.py --exp sweep_OD --OD_list 1.6 3.175 6.35 12.7 
 
+## for double gaussian
+# lambda sweep (sampling / aliasing study)
+python3 main_doublegaussian.py --exp sweep_lambda 
+
+# Off-axis sweep (±35 mm at source plane, 36 steps total)
+python3 main.py --exp offaxis --field_max_mm 35 --field_steps 36 
