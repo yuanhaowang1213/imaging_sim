@@ -4,6 +4,7 @@ from pathlib import Path
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 def _to_float_or_nan(x: str) -> float:
     try:
@@ -102,57 +103,78 @@ def plot_metrics_from_csv(
     for v in ykeys:
         _heatmap(v)
 # sweep N
-plot_metrics_from_csv("out/sweep_N/metrics.csv",
-                      xkey="N",
-                      ykeys=[ "rms_radius_mm"],
-                      title="PSF metrics vs N",
-                      xlabel="N (rays)")
+csv_path = "out/sweep_N/metrics.csv"
+if os.path.isfile(csv_path):
+    print(f"[plot] plotting {csv_path}")
+    plot_metrics_from_csv(csv_path,
+                        xkey="N",
+                        ykeys=[ "rms_radius_mm"],
+                        title="PSF metrics vs N",
+                        xlabel="N (rays)")
 
 # sweep lambda
-plot_metrics_from_csv("out/sweep_lambda/metrics.csv",
-                      xkey="lambda_nm",
-                      ykeys=[ "rms_radius_mm","ee50_mm"],
-                      title="PSF metrics vs Wavelength",
-                      xlabel="Wavelength (nm)")
+csv_path = "out/sweep_lambda/metrics.csv"
+if os.path.isfile(csv_path):
+    print(f"[plot] plotting {csv_path}")
+    plot_metrics_from_csv(csv_path,
+                        xkey="lambda_nm",
+                        ykeys=[ "rms_radius_mm","ee50_mm"],
+                        title="PSF metrics vs Wavelength",
+                        xlabel="Wavelength (nm)")
 # sweep 1D offaxis
-plot_metrics_from_csv("out/offaxis/metrics.csv",
-                      xkey="x_off_mm",
-                      ykeys=["rms_radius_mm"],
-                      title="Off-axis PSF metrics",
-                      xlabel="Source x-offset (mm)")
+csv_path = "out/offaxis/metrics.csv"
+if os.path.isfile(csv_path):
+    print(f"[plot] plotting {csv_path}")
+    plot_metrics_from_csv(csv_path,
+                        xkey="x_off_mm",
+                        ykeys=["rms_radius_mm"],
+                        title="Off-axis PSF metrics",
+                        xlabel="Source x-offset (mm)")
 
 # sweep d2 
-plot_metrics_from_csv("out/sweep_D2/metrics.csv",
-                      xkey="D2",
-                      ykeys=[ "rms_radius_mm","ee50_mm"],
-                      title="Through-focus metrics",
-                      xlabel="D2 (mm)")
+csv_path = "out/sweep_D2/metrics.csv"
+if os.path.isfile(csv_path):
+    print(f"[plot] plotting {csv_path}")
+    plot_metrics_from_csv(csv_path,
+                        xkey="D2",
+                        ykeys=[ "rms_radius_mm","ee50_mm"],
+                        title="Through-focus metrics",
+                        xlabel="D2 (mm)")
 # sweep OD (aperture diameter)
-plot_metrics_from_csv(
-    "out/sweep_OD/metrics.csv",
-    xkey="OD",
-    ykeys=[ "rms_radius_mm","ee50_mm"],
-    title="PSF metrics vs Aperture Diameter",
-    xlabel="Aperture OD (mm)"
-)
+csv_path = "out/sweep_OD/metrics.csv"
+if os.path.isfile(csv_path):
+    print(f"[plot] plotting {csv_path}")
+    plot_metrics_from_csv(
+        csv_path,
+        xkey="OD",
+        ykeys=[ "rms_radius_mm","ee50_mm"],
+        title="PSF metrics vs Aperture Diameter",
+        xlabel="Aperture OD (mm)"
+    )
 
 ## Double Gaussian
 # sweep lambda (aperture diameter)
-plot_metrics_from_csv(
-    "out_gaussian/sweep_lambda/metrics.csv",
-    xkey="lambda_nm",
-    ykeys=[ "rms_radius_mm"],
-    title="PSF metrics vs Aperture Diameter",
-    xlabel="Aperture OD (mm)"
+csv_path = "out_gaussian/sweep_lambda/metrics.csv"
+if os.path.isfile(csv_path):
+    print(f"[plot] plotting {csv_path}")
+    plot_metrics_from_csv(
+        csv_path,
+        xkey="lambda_nm",
+        ykeys=[ "rms_radius_mm"],
+        title="PSF metrics vs Aperture Diameter",
+        xlabel="Aperture OD (mm)"
 )
 
 # sweep 1D offaxis
-plot_metrics_from_csv(
-    "out_gaussian/offaxis/metrics.csv",
-    xkey="x_off_mm",
-    ykeys=[ "rms_radius_mm"],
-    title="PSF metrics vs Aperture Diameter",
-    xlabel="Aperture OD (mm)"
+csv_path = "out_gaussian/offaxis/metrics.csv",
+if os.path.isfile(csv_path):
+    print(f"[plot] plotting {csv_path}")
+    plot_metrics_from_csv(
+        csv_path,
+        xkey="x_off_mm",
+        ykeys=[ "rms_radius_mm"],
+        title="PSF metrics vs Aperture Diameter",
+        xlabel="Aperture OD (mm)"
 )
 
 # # sweep field
