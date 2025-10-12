@@ -10,7 +10,9 @@
 
 ## code running:
 ### Experiment run: 
-The main experiment is in the [main.py](../main.py) and [main_double.py](../main_doublegaussian.py)
-
-
+The main entry point is described in [run.sh](../run.sh).
+```bash
+sh run.sh
+```
 ### Plot run
+Directly run the [plot_metrics.py](../plot_metrics.py)
