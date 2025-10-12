@@ -54,11 +54,11 @@
 	
 	\section{Experiment}\label{experiment}
 	
-	For the evaluation of the results, we consider the Thorlabs LB1761 (a simple N-BK7 biconvex singlet lens) and perform a simulation using an f/8 aperture placed \SI{2}{\milli\meter} from the second lens surface.
+	For the evaluation of the results, we consider the Thorlabs LB1761 (a simple BK7 biconvex singlet lens) and perform a simulation using an f/8 aperture placed \SI{2}{\milli\meter} from the second lens surface.
 	We map \([R1, T, R2, D2, OD]\) (mm) as:
-	\textbf{R1 = 24.5}, \textbf{T = 9}, \textbf{R2 = -24.5}, \textbf{D2 = 22.2}, \textbf{OD = 3.175} (f/8).
+	\textbf{R1 = 24.5}, \textbf{T = 9}, \textbf{R2 = -24.5}, \textbf{D2 = 20.5}, \textbf{OD = 3.175} (f/8).
 	
-	We only use \textbf{OD = 6.25 mm} for off-axis sweep and field\_grid sweep.
+	We only use \textbf{OD = 6.25 mm} for the sampling (N) sweep  and off-axis experiments to better illustrate the effects of varying N and off-axis aberrations.
 	
 	We conducted the following experiments:
 	\begin{itemize}
@@ -80,7 +80,7 @@
 	
 	\subsubsection*{Function Test}\label{function-test}
 	
-	Function tests are in \href{../tests/test_geo.py}{\texttt{test\_geo.py}} and \href{../tests/test_ray_tracing.py}{\texttt{test\_ray\_tracing.py}}.
+	Function tests are in \href{../tests/test_geo.py}{\texttt{test\_geo.py}} and \href{../tests/test_ray_tracing.py}{\texttt{test\_ray\_tracing.py}}, mainly to verify the correctness of the geometric calculations and function implementations.
 	
 	\paragraph{Lens layout.}%
 	\pandocbounded{\includegraphics[width=\linewidth,keepaspectratio]{biconvex_layout.png}}
@@ -109,13 +109,13 @@
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=\linewidth]{biconvex_psf_log.png}
-		\caption{PSF (log scale) at best focus.}
+		\caption{PSF (log scale) at best focus for \textbf{3.175 (f/8)} .}
 	\end{figure}
 	
 	\subsubsection*{N-sweep (sampling)}\label{n-sweep-sampling}
 	
 	We swept \(N \in \{50, 100, 400, 1600, 3200, 6400\}\) and computed metrics vs. \(N\).
-	To probe focus sensitivity, we also used a larger aperture \(\mathrm{OD} = \SI{6.35}{mm}\) and repeated the PSF analysis.
+	To probe focus sensitivity, we also used a larger aperture \(\mathrm{OD} = \SI{6.35}{mm}\) \(\mathrm{D2} = \SI{20.3}{mm}\) and repeated the PSF analysis.
 	
 	Illustrations for \(N=\{50, 400, 3200\}\) are shown below (more in the \href{../out/sweep_N}{folder}):
 	
@@ -144,7 +144,7 @@
 	
 	\subsubsection*{Wavelength Sweep}\label{wavelength-sweep}
 	
-	We sweep \(\lambda \in \{430, 520, 610\}\,\mathrm{nm}\) (within the visible range):
+	We sweep \(\lambda \in \{430,, 670\}\,\mathrm{nm}, \), with sweep\_step  \(10 nm\) (within the visible range):
 	
 	\begin{table}[H]
 		\centering
@@ -195,7 +195,7 @@
 	
 	\subsubsection*{Off-axis sweep}\label{off-axis-sweep}
 	
-	We consider \(\mathrm{OD}=\SI{6.35}{mm}\ (f/4)\) and field offsets \(-35, 0, 35\ \mathrm{mm}\):
+	We consider \(\mathrm{OD}=\SI{6.35}{mm}\ (f/4), R2=20.3mm \) for better focus and field offsets \(-35,  35\ \mathrm{mm}\), sampling 36 steps:
 	
 	\begin{table}[H]
 		\centering
@@ -226,26 +226,36 @@
 	With small \(N\), the PSF shows speckle-like noise due to non-uniform pupil mapping; as \(N \gtrsim 1600\), RMS and EE50 stabilize and the PSF becomes smooth.
 	Mitigations: increase \(N\); average multiple seeds; sample uniformly on the pupil.
 	
-	\subsubsection*{Off-Axis Source}
-	
-	Off-axis increases centroid shift and introduces coma/astigmatism at large field; best-focus distance varies mildly across field, indicating slight field curvature.
-	A more complex lens group can suppress these effects.
+
 	
 	\subsubsection*{Wavelength Dependence (Chromatic Aberration)}
 	
 	With BK7 dispersion, \(n(\lambda)\) decreases with \(\lambda\); effective focal length increases with \(\lambda\).
 	Thus a fixed sensor plane cannot be perfect for all wavelengths (blue focuses in front; red behind).
 	
-	\subsubsection*{Aperture Effect (f-number)}
-	
-	As OD increases from f/16 to f/2:
-	EE50 remains nearly constant at small apertures;
-	RMS grows at large apertures due to spherical aberration and coma.
-	This reflects a brightness--sharpness trade-off.
-	
+		
 	\subsubsection*{Through-Focus Behavior}
 	
 	Sweeping \(D_2\) shows smooth degradation away from best focus (\SI{20.5}{mm}); curves are slightly asymmetric and steeper for larger apertures, matching expectations for residual spherical terms.
+	
+	\subsubsection*{Aperture Effect (f-number)}
+	
+	As OD increases from f/16 to f/2:
+	\begin{itemize}
+		\item 	EE50 remains nearly constant at small apertures;
+		\item 	RMS grows at large apertures due to spherical aberration and coma.
+	\end{itemize}
+
+	\subsubsection*{Off-Axis Source}
+
+Off-axis increases centroid shift and introduces coma at large field; best-focus distance varies mildly across field, indicating slight field curvature.
+A more complex lens group can suppress these effects (seen in the double gaussian lens experiment).
+
+This indicates a trade-off between brightness and sharpness:
+smaller apertures (f/8–f/16) yield tighter PSFs and reduced aberrations,
+while very large apertures (f/2) show blur halos and energy spread.
+
+
 	
 	\subsection{Algorithmic Correction of Aberrations}
 	

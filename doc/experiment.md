@@ -2,9 +2,9 @@
 
 FFor the evaluation of the results, we consider the Thorlabs LB1761 (a simple N-BK7 biconvex singlet lens) and perform a simulation using an f/8 aperture placed 2 mm  from the second lens surface. We map \[R1, T, R2, D2, OD\] (mm) as:
 
-**R1 = 24.5**, **T = 9**, **R2 = −24.5**, **D2 = 22.2**, **OD = 3.175** (≈ f/8)
+**R1 = 24.5**, **T = 9**, **R2 = −24.5**, **D2 = 20.5**, **OD = 3.175** (≈ f/8)
 
-We only use **OD = 6.25 mm** for Off-axis sweep and field_grid sweep.
+We only use **OD = 6.25 mm** for the sampling (N) sweep  and off-axis experiments to better illustrate the effects of varying N and off-axis aberrations.
 
 We conducted following experiment:
 
@@ -23,7 +23,7 @@ Futher, we consider a double Gaussian Lens  [US253251A](https://patents.google.c
 - Off-axis sweep
 
 ### Function Test
-Function test was conducted in the tests folder, named as [test_geo.py](../tests/test_geo.py) and [test_ray_tracing.py](../tests/test_ray_tracing.py)
+Function test was conducted in the tests folder, named as [test_geo.py](../tests/test_geo.py) and [test_ray_tracing.py](../tests/test_ray_tracing.py), mainly to verify the correctness of the geometric calculations and function implementations.
 ### Lens layout
 The lens could be viewed as 
 ![](../out/biconvex_layout.png)
@@ -33,17 +33,18 @@ The ray tracing could be viewed as
 
 ### PSF Exmples
 After optimization, we found that placing the sensor (in mm) at following list  after the aperture (in mm) yields the best focus.
-|       **Aperture (mm)**      | **1.6 (f/16)** | **3.175 (f/8)** | **6.35 (f/4)** | **12.7 (f/2)** |
+|       **Aperture (OD)  (mm)**      | **1.6 (f/16)** | **3.175 (f/8)** | **6.35 (f/4)** | **12.7 (f/2)** |
 | :--------------------------: | :------------: | :-------------: | :------------: | :------------: |
 | **Best Focus Distance (mm)** |      20.55     |       20.5      |      20.3      |      18.7      |
 
 **Observation**: The best sensor-to-aperture distance varies slightly with aperture size, showing a shift from 20.55 mm at f/16 to 18.7 mm at f/2 due to increased spherical aberration at larger apertures.
 
+PSF example: PSF (log scale) at best focus for (**OD = 3.175 (f/8)**)
 ![](../out/biconvex_psf_log.png)
 
 ### N-sweep (sampling)
 We sweeped N for **[50, 100, 400,1600,3200,6400]**, and calculated the **Metrics vs N**. 
-To further examine the focus sensitivity, we use a lareger aperture **OD = 6.35** and repeated the PSF analysis. This deliberate defocus allows us to study how the spot size and energy distribution degrade when the image plane is displaced, providing a better understanding of depth-of-focus and system tolerance.
+To further examine the focus sensitivity, we use a lareger aperture **OD = 6.35, D2 = 20.3 mm** and repeated the PSF analysis. This deliberate defocus allows us to study how the spot size and energy distribution degrade when the image plane is displaced, providing a better understanding of depth-of-focus and system tolerance.
 
 
 We illustrate the **N = 50, 400, 3200**, respectively and more to be found in the [folder](../out/sweep_N)
@@ -59,8 +60,8 @@ EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_N/metrics.csv) a
 
 ### Wavelength Sweep
 
-We sweep wavelength for **range(430 ,670, 10) nm**, a range of vible spectrum.
-| lambda = 430 | lambda = 520 | lambda = 610 |
+We sweep wavelength for **range(430 ,670) nm, with sweep step 10 nm**, a range of vible spectrum.
+| lambda = 430 nm | lambda = 520 nm | lambda = 610 nm|
 |:-------:|:--------:|:---------:|
 | ![PSF 430](../out/sweep_lambda/biconvex_psf_430_log.png) | ![PSF 520](../out/sweep_lambda/biconvex_psf_520_log.png) | ![PSF 610](../out/sweep_lambda/biconvex_psf_610_log.png)  |
 
@@ -73,7 +74,7 @@ EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_lambda/metrics.c
 
 ### Through-focus (D2 sweep)
 
-We sweep D2 for range **range (19.5,21.5,13) mm,**, the best focus is at 20.5
+We sweep D2 for range **range (19.5,21.5) mm, sampling 13 steps**, the best focus is at 20.5.
 
 
 EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_D2/metrics.csv) and ploted ![](../out/sweep_D2/metrics_vs_D2.png)
@@ -90,10 +91,10 @@ EE50 and RMS metrics are recorded in [metrics.csv](../out/sweep_OD/metrics.csv) 
 **Observation**:As aperture increases from ~1.6→12.7 mm, the PSF’s core (EE50) stays nearly constant at small–moderate apertures while the halo (RMS) grows rapidly—and at the largest aperture both EE50 and RMS spike—so the sharpest results occur with small apertures (~1.6–3.2 mm).
 ### Off-axis sweep
 
-We consider a larger aperture **6.35 mm (f/4)** for this experiment to have a better view of the results.
+We consider a larger aperture **OD=6.35 mm (f/4), R2 = 20.3 mm for best focus** for this experiment to have a better view of the results.
 
 
-We illustrate the **offset of -35 mm , 0, 35 mm**, respectively and more to be found in the [folder](../out/offaxis/)
+We illustrate the **offset of -35 mm , 0, 35 mm, sampling 36 steps**, respectively and more to be found in the [folder](../out/offaxis/)
 | Off axis = -35 mm | Off axis = 0 mm | Off axis = 35 mm|
 |:-------:|:--------:|:---------:|
 | ![PSF -35](../out/offaxis/biconvex_psf_-35.00_log.png) | ![PSF 1](../out/sweep_N/biconvex_psf_3200_log.png) | ![PSF 610](../out/offaxis/biconvex_psf_35.00_log.png)  |
@@ -119,13 +120,6 @@ To mitigate aliasing effects:
 
 - Sample uniformly on the pupil plane instead of emission angle.
 
-### Off-Axis Source
-As the source moves off-axis, the PSF centroid shifts linearly with field angle.
-At small field angles, PSFs remain compact and symmetric.
-At larger offsets, the PSF becomes asymmetric—displaying coma and astigmatism tails typical of rotationally symmetric singlets.
-Additionally, the best-focus distance varies slightly across field points, suggesting mild field curvature.
-
-This could be suppressed by using complex lens group.
 
 ### Wavelength Dependence (Chromatic Aberration)
 
@@ -138,7 +132,13 @@ Hence, a fixed sensor plane cannot be perfectly focused for all wavelengths:
 - Red (long $\lambda$) focuses behind it.
 
 This produces the expected longitudinal chromatic aberration (LCA), observed in the $\lambda$-sweep where the smallest PSF occurs near 500 nm.
-The pattern validates that BK7’s chromatic focus shifts are correctly modeled
+The pattern validates that BK7’s chromatic focus shifts are correctly modeled.
+
+### Through-Focus Behavior
+
+Sweeping sensor distance D₂ shows that PSF quality degrades smoothly as the plane moves away from best focus (20.5 mm).
+The RMS and EE50 curves rise asymmetrically around the minimum, reflecting realistic lens aberrations and residual spherical terms.
+This profile defines the depth-of-focus, and the slope steepens for larger apertures—matching theoretical expectations.
 
 ### Aperture Effect (f-number)
 
@@ -152,11 +152,13 @@ This indicates a trade-off between brightness and sharpness:
 smaller apertures (f/8–f/16) yield tighter PSFs and reduced aberrations,
 while very large apertures (f/2) show blur halos and energy spread.
 
-### Through-Focus Behavior
 
-Sweeping sensor distance D₂ shows that PSF quality degrades smoothly as the plane moves away from best focus (20.5 mm).
-The RMS and EE50 curves rise asymmetrically around the minimum, reflecting realistic lens aberrations and residual spherical terms.
-This profile defines the depth-of-focus, and the slope steepens for larger apertures—matching theoretical expectations.
+
+### Off-Axis Source
+Off-axis increases centroid shift and introduces coma at large field; best-focus distance varies mildly across field, indicating slight field curvature.
+
+A more complex lens group can suppress these effects (seen in the double gaussian lens experiment).
+
 
 ## Algorithmic Correction of Aberrations
 Optical aberrations such as defocus, spherical aberration, coma, and astigmatism broaden the PSF and degrade contrast across the field.
