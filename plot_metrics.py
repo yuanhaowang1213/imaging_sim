@@ -166,7 +166,7 @@ if os.path.isfile(csv_path):
 )
 
 # sweep 1D offaxis
-csv_path = "out_gaussian/offaxis/metrics.csv",
+csv_path = "out_gaussian/offaxis/metrics.csv"
 if os.path.isfile(csv_path):
     print(f"[plot] plotting {csv_path}")
     plot_metrics_from_csv(
