@@ -56,14 +56,14 @@ imaging_sim/
 ├── out/                     # Generated PSF images and metrics CSVs
 ├── out_gaussian/            # Generated results for Double Gaussian lenses
 ├── doc/                     # Documentation and experiment analysis
-│   ├── general.md
-│   ├── codeexplanation.md
-│   ├── experiment.md
-│   ├── experiment.pdf
-│   └── lenssimulation.pdf
+│   ├── general.md           # General background
+│   ├── codeexplanation.md   # Code explain
+│   ├── experiment.md        # Experiment results (markdown version)
+│   ├── experiment.pdf       # Experiment results (pdf version)
+│   └── lenssimulation.pdf   # Experiment report slides (pdf version)
 ├── create_env.sh            # Environment setup
 ├── run.sh                   # One-command entry point
-├── requirements.txt
-└── README.md
+├── requirements.txt         # Env
+└── README.md               
 
 ```
