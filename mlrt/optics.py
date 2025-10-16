@@ -173,6 +173,72 @@ class Lensgroup(PrettyPrinter):
         return I
 
     # ---- samplers & tracing ----
+    def _passes_stop(self, origin_b1x3: torch.Tensor, dir_b1x3: torch.Tensor, stop_i: int) -> bool:
+        """
+        Return whether this ray passes through the aperture stop.
+        """
+        ray = Ray(
+            origin_b1x3,
+            dir_b1x3,
+            torch.tensor([500.0], device=origin_b1x3.device),
+            device=origin_b1x3.device,
+        )
+        _, valid = self.trace(ray, stop_ind=stop_i)
+        return bool(valid.item()) if valid.numel() == 1 else bool(valid[0].item())
+
+
+    def _theta_max_via_binary_search(
+        self,
+        origin: torch.Tensor,
+        axis_dir: torch.Tensor,
+        stop_i: int,
+        r_stop: float,
+        z_stop: float,
+        geom_pad: float = 1.02,
+        n_iter: int = 22,
+        phi: float = 0.0,
+    ) -> float:
+        """
+        Perform a binary search to find the marginal ray angle (theta_max)
+        that just grazes the aperture stop.
+        Returns:
+            The marginal ray half-angle (theta_max) in radians.
+        """
+        device = origin.device
+
+        # Compute an initial geometric upper bound (from source to stop center)
+        c = torch.tensor([0.0, 0.0, z_stop], device=device) - origin
+        dist = float(torch.linalg.norm(c))
+        th_hi = math.atan2(r_stop, max(dist, 1e-9)) * geom_pad
+        th_lo = 0.0
+
+        # Construct a local orthonormal basis (u, v, axis)
+        axis = axis_dir / (torch.linalg.norm(axis_dir) + 1e-12)
+        tmp = torch.tensor([1.0, 0.0, 0.0], device=device)
+        if torch.abs((tmp * axis).sum()) > 0.9:
+            tmp = torch.tensor([0.0, 1.0, 0.0], device=device)
+        u = torch.cross(axis, tmp)
+        u = u / (torch.linalg.norm(u) + 1e-12)
+        v = torch.cross(axis, u)
+
+        # Binary search: find the maximum angle where the ray still passes the stop
+        for _ in range(n_iter):
+            th_mid = 0.5 * (th_lo + th_hi)
+
+            # Construct ray direction at the given polar (th_mid) and azimuth (phi)
+            dx = math.sin(th_mid) * math.cos(phi)
+            dy = math.sin(th_mid) * math.sin(phi)
+            dz = math.cos(th_mid)
+            d = (u * dx + v * dy + axis * dz).view(1, 3)
+
+            # Check if the ray passes the stop
+            if self._passes_stop(origin.view(1, 3), d, stop_i):
+                th_lo = th_mid  # Still passes → increase lower bound
+            else:
+                th_hi = th_mid  # Blocked → decrease upper bound
+
+        return th_lo  # Converged marginal angle
+
     def sample_ray_from_point(
         self,
         D_mm: float = 1000.0,
@@ -198,7 +264,10 @@ class Lensgroup(PrettyPrinter):
             stop = self.surfaces[stop_i]
             z_stop = float(stop.d.detach().cpu().item())
             r_stop = float(stop.r)
-            theta_max = math.atan2(r_stop, D_mm + z_stop)
+            z_front = float(self.surfaces[0].d.detach().cpu().item())
+            z_src = z_front - float(D_mm)
+            o0 = torch.tensor([0.0, 0.0, z_src], device=device)
+            theta_max = self._theta_max_via_binary_search(o0, torch.tensor([0.0, 0.0, 1.0], device=device), stop_i, r_stop, z_stop, geom_pad=1.02)
 
         # angular grid (uniform in angle, not solid angle)
         n_th = int(math.sqrt(N))
@@ -225,6 +294,8 @@ class Lensgroup(PrettyPrinter):
             ray.d = ray.d[valid]
             ray.wavelength = ray.wavelength[valid]
         return ray
+
+
     # off axis sampling
     def sample_offaxis_point_axis(
         self,
@@ -252,7 +323,13 @@ class Lensgroup(PrettyPrinter):
         axis = c / (dist + 1e-12)
 
         # cone half-angle so that cone just touches stop rim
-        theta_max = math.atan2(r_stop, max(dist, 1e-9))
+        K = 8
+        thetas = []
+        for k in range(K):
+            phi = 2.0 * math.pi * (k / K)
+            th_k = self._theta_max_via_binary_search(o0, axis, stop_i, r_stop, z_stop, geom_pad=1.02, phi=phi)
+            thetas.append(th_k)
+        theta_max = float(min(thetas)) 
 
         # angle-uniform grid on that cone
         n_th = max(1, int(math.sqrt(max(1, N))))

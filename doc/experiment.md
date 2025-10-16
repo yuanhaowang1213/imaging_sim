@@ -35,7 +35,7 @@ The ray tracing could be viewed as
 After optimization, we found that placing the sensor (in mm) at following list  after the aperture (in mm) yields the best focus.
 |       **Aperture (OD)  (mm)**      | **1.6 (f/16)** | **3.175 (f/8)** | **6.35 (f/4)** | **12.7 (f/2)** |
 | :--------------------------: | :------------: | :-------------: | :------------: | :------------: |
-| **Best Focus Distance (mm)** |      20.55     |       20.5      |      20.3      |      18.7      |
+| **Best Focus Distance (mm)** |      20.55     |       20.5      |      20.3      |      18.70      |
 
 **Observation**: The best sensor-to-aperture distance varies slightly with aperture size, showing a shift from 20.55 mm at f/16 to 18.7 mm at f/2 due to increased spherical aberration at larger apertures.
 

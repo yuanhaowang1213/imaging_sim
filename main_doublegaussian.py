@@ -22,7 +22,7 @@ def build_lens(
     Geometry:
       S1: AIR -> BK7 at z=0
       S2: BK7 -> AIR at z=T, radius LD
-      A : optional AIR–AIR stop at z = T + stop_after_s2_mm, radius = OD/2
+      A : optional AIR-AIR stop at z = T + stop_after_s2_mm, radius = OD/2
       Sensor plane:
       z = T + stop_after_s2_mm + D2 (used only for intersection)
     """
